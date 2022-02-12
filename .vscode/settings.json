@@ -1,0 +1,29 @@
+{
+  "editor.formatOnSave": true, // 저장시 format
+  "editor.codeActionsOnSave": {
+    // For ESLint
+    "source.fixAll.eslint": true
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.formatOnSave": true,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.formatOnSave": true,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.formatOnSave": true,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false
+  },
+  "workbench.settings.useSplitJSON": true // 요거 넣어줘야 설정이 merge된대요.
+}
