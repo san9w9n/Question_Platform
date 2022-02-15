@@ -15,7 +15,9 @@ class IndexController {
   }
 
   home(req, res) {
-    res.send('good')
+    res.json({
+      'good' : 'good',
+    })
   }
 }
 
