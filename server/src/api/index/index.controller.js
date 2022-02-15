@@ -15,6 +15,7 @@ class IndexController {
   }
 
   home(req, res) {
+    console.log('here we come')
     res.json({
       'good' : 'good',
     })
