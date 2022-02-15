@@ -4,7 +4,7 @@ const IndexController = require('./api/index/index.controller')
 const UserController = require('./api/users/user.controller')
 
 async function startServer() {
-  initializeDatabase()
+  // initializeDatabase()
   const app = new App([new IndexController(), new UserController()])
   app.listen()
 }

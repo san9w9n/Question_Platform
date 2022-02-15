@@ -12,7 +12,13 @@ class UserController {
   }
 
   initializeRoutes() {
-    this.router.get('/signup', this.signup).post('/signup', this.signup)
+    this.router
+      .get('/signup', this.signup)
+      .post('/signup', this.signup)
+  }
+
+  signup(req, res) {
+    res.send('good')
   }
 }
 

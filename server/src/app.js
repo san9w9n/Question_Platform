@@ -16,9 +16,9 @@ class App {
 
   listen() {
     const PORT = process.env.PORT || 5000
-    const HOST = process.env.HOST || '127.0.0.1'
-    this.app.listen(PORT, HOST, () => {
-      console.log(`App listening on "${HOST}:${PORT}"`)
+    this.app.listen(PORT, () => {
+      // eslint-disable-next-line no-console
+      console.log(`App listening on ${PORT}`)
     })
   }
 

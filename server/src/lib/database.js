@@ -11,7 +11,10 @@ function initializeDatabase() {
     database: 'everydayCoding',
   })
   db.connect((err) => {
-    if (err) console.log('DB connection failed.')
+    if (err) {
+      console.log('DB connection failed.')
+      console.log(err)
+    }
     else console.log('DB connected.')
   })
 }
