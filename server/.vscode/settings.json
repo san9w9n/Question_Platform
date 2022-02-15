@@ -25,5 +25,5 @@
     "editor.insertSpaces": true,
     "editor.detectIndentation": false
   },
-  "workbench.settings.useSplitJSON": true // 요거 넣어줘야 설정이 merge된대요.
+  "workbench.settings.useSplitJSON": true
 }
