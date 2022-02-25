@@ -3,7 +3,7 @@ const errorMiddleware = (err, req, res, next) => {
   // const msg = err.message
   res.json({
     'code' : `${code}`,
-    'error' : 'error',
+    'error' : err,
   })
 }
 
