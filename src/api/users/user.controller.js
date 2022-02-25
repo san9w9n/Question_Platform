@@ -1,7 +1,6 @@
 /* eslint-disable class-methods-use-this */
 
 const { Router } = require('express')
-const UserRepository = require('./user.repository')
 
 class UserController {
   constructor() {
@@ -18,7 +17,9 @@ class UserController {
   }
 
   signup(req, res) {
-    res.send('good')
+    res.json({
+      'good' : 'good',
+    })
   }
 }
 
