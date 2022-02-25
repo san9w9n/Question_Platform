@@ -29,13 +29,13 @@ class App {
   initializeMiddlewares() {
     this.app.use(express.json())
     this.app.use(express.urlencoded({ extended: true }))
-    this.app.use(
-      session({
-        secret: process.env.sessionSECRET,
-        resave: false,
-        saveUninitialized: true,
-      })
-    )
+    // this.app.use(
+    //   session({
+    //     secret: process.env.sessionSECRET,
+    //     resave: false,
+    //     saveUninitialized: true,
+    //   })
+    // )
   }
 
   initializeErrorHandling() {
@@ -48,6 +48,8 @@ class App {
 
   initializeControllers(controllers) {
     controllers.forEach((controller) => {
+      console.log(`path: ${controller.path}`)
+      console.log(controller.router)
       this.app.use(controller.path, controller.router)
     })
   }
