@@ -29,13 +29,13 @@ class App {
   initializeMiddlewares() {
     this.app.use(express.json())
     this.app.use(express.urlencoded({ extended: true }))
-    // this.app.use(
-    //   session({
-    //     secret: process.env.sessionSECRET,
-    //     resave: false,
-    //     saveUninitialized: true,
-    //   })
-    // )
+    this.app.use(
+      session({
+        secret: process.env.sessionSECRET,
+        resave: false,
+        saveUninitialized: true,
+      })
+    )
   }
 
   initializeErrorHandling() {
