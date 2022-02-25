@@ -1,5 +1,4 @@
 const App = require('./app')
-const { initializeDatabase } = require('./lib/database')
 const IndexController = require('./api/index/index.controller')
 const UserController = require('./api/users/user.controller')
 
