@@ -1,6 +1,6 @@
 const notFoundMiddleware = (req, res, next) => {
   res.json({
-    'bad' : 'bad',
+    'notFound' : 'notFound',
   })
 }
 
