@@ -2,8 +2,8 @@
 const errorMiddleware = (err, _req, res, _next) => {
   const code = err.status || 500
   res.json({
-    'code' : `${code}`,
-    'error' : err,
+    code: `${code}`,
+    error: err,
   })
 }
 

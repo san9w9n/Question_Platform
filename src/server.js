@@ -9,4 +9,5 @@ async function startServer() {
   const app = new App([new IndexController(), new UserController()])
   app.listen()
 }
+
 startServer()
