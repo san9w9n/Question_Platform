@@ -21,6 +21,7 @@
     "dotenv": "^16.0.0",
     "express": "^4.17.2",
     "express-session": "^1.17.2",
+    "nodemailer": "^6.7.2",
     "pg": "^8.7.3",
     "prettier": "^2.5.1",
     "pug": "^3.0.2"
