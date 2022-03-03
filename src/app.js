@@ -48,8 +48,6 @@ class App {
 
   initializeControllers(controllers) {
     controllers.forEach((controller) => {
-      console.log(`path: ${controller.path}`)
-      console.log(controller.router)
       this.app.use(controller.path, controller.router)
     })
   }
