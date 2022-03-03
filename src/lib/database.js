@@ -17,10 +17,10 @@ class Database {
       port: 5432,
       ssl: {
         rejectUnauthorized: false,
-      }
+      },
     })
     this.client.connect((err) => {
-      if (err) console.log(err)
+      if (err) console.log('database connection failed.')
       else console.log('database connection success.')
     })
   }
