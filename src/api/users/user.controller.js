@@ -1,7 +1,8 @@
 /* eslint-disable class-methods-use-this */
 
-const { Router } = require('express')
 const nodemailer = require('nodemailer')
+const { Router } = require('express')
+const { findUserEmail } = require('./user.repository')
 
 class UserController {
   constructor() {
@@ -11,16 +12,13 @@ class UserController {
     this.initializeRoutes()
   }
 
-  // 이메일 인증 => 성공 => 비밀번호, 이름, ...
-
   initializeRoutes() {
     this.router.post('/email/auth', this.emailAuth)
   }
 
   emailAuth(req, res) {
-    console.log(req.body)
     const { email } = req.body
-    if (!email) {
+    if (!email || findUserEmail(email)) {
       res.json({
         success: false,
         message: 'NO EMAIL INFO.',
@@ -48,7 +46,7 @@ class UserController {
     transporter.sendMail(message)
     res.json({
       success: true,
-      message: 'NO EMAIL INFO.',
+      message: 'email is verified.',
     })
   }
 }
