@@ -9,7 +9,6 @@ class UserController {
     this.path = '/users'
     this.router = Router()
 
-    require('./user.repository').showUsers()
     this.initializeRoutes()
   }
 

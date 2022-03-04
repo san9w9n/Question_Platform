@@ -13,14 +13,6 @@ const client = new Client({
     rejectUnauthorized: false,
   },
 })
-client.connect((err) => {
-  if (err) console.log('database connection failed.')
-  else console.log('database connectino success.')
-})
-
-client.on('error', (err) => {
-  console.error('Database error', err.stack)
-})
 
 module.exports = {
   client,
