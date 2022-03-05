@@ -1,34 +1,48 @@
 /* eslint-disable no-console */
 const { client } = require('../../lib/database')
 
-// test
+async function findUserEmail(email) {
+  console.log(email)
 
-async function showUsers() {
-  const query = await client.query('SELECT * FROM students')
-  const students = []
-  await query.rows.forEach((row) => {
-    students.push(row)
+  let result = false
+
+  const query = await client.query(`SELECT user_email FROM students`)
+  query.rows.forEach((row) => {
+    if (row.user_email.trim() === email) {
+      result = true
+    }
   })
-  console.log(students)
+  return result
 }
 
-async function findUserEmail(email) {}
-
-function saveUserToDB(userInfo) {
-  // param : 유저 정보
-  // return : 저장 잘 되었는지 return
+async function saveUserToDB(userInfo) {
   console.log(userInfo)
+
+  await client.query(
+    `INSERT INTO students VALUES ('${userInfo.password}', '${userInfo.name}', '${userInfo.email}', '${userInfo.hakbeon}')`
+  )
+  return true
 }
 
-function verifyUser(userInfo) {
-  // param : 유저 정보
-  // return : db의 정보와 일치하는지 return
+async function verifyUser(userInfo) {
   console.log(userInfo)
+
+  const query = await client.query(
+    `SELECT user_id FROM students WHERE user_pw='${userInfo.password}' and user_email='${userInfo.email}'`
+  )
+  return query.rows.length && query.rows[0].user_id
 }
 
 module.exports = {
-  showUsers,
   findUserEmail,
   saveUserToDB,
   verifyUser,
 }
+
+// jsdoc
+// verifyUser() return user_id로 변경
+// 공백이슈
+// forEach문 break
+// user.controller.js async로 변경해야함
+// verifyUser()에서 row가 2개일 경우는 없겠지?
+// saveUserToDB() return ?

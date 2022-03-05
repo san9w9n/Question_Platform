@@ -2,7 +2,7 @@
 
 const nodemailer = require('nodemailer')
 const { Router } = require('express')
-const { findUserEmail } = require('./user.repository')
+const { findUserEmail, saveUserToDB } = require('./user.repository')
 
 class UserController {
   constructor() {
@@ -13,7 +13,7 @@ class UserController {
   }
 
   initializeRoutes() {
-    this.router.post('/email/auth', this.emailAuth)
+    this.router.post('/email/auth', this.emailAuth).post('/join', this.join)
   }
 
   emailAuth(req, res) {
@@ -49,6 +49,27 @@ class UserController {
     res.json({
       success: true,
       authKey: `${authKey}`,
+    })
+  }
+
+  join(req, res) {
+    const { email, name, password, hakbeon } = req.body
+    if (!email || !name || !password || !hakbeon) {
+      res.json({
+        success: false,
+        message: 'body information is wrong.',
+      })
+      return
+    }
+    if (!saveUserToDB({ email, name, password, hakbeon })) {
+      res.json({
+        success: false,
+        message: 'DB save failed.',
+      })
+      return
+    }
+    res.json({
+      success: true,
     })
   }
 }
