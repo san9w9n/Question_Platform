@@ -16,12 +16,6 @@ const client = new Client({
   },
 })
 
-client.connect((err) => {
-  if (err) console.log('database connection failed.')
-  else console.log('database connection success.')
-})
-
-// error-handling
 client.on('error', (err) => {
   console.error('Database error', err.stack)
 })
