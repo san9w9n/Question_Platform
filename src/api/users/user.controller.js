@@ -2,7 +2,7 @@
 
 const nodemailer = require('nodemailer')
 const { Router } = require('express')
-const { findUserEmail, saveUserToDB } = require('./user.repository')
+const { findUserEmail, saveUserToDB, verifyUser } = require('./user.repository')
 
 class UserController {
   constructor() {
@@ -13,17 +13,19 @@ class UserController {
   }
 
   initializeRoutes() {
-    this.router.post('/email/auth', this.emailAuth).post('/join', this.join)
+    this.router
+      .post('/join/auth', this.joinAuth)
+      .post('/join', this.join)
+      .post('/login', this.login)
   }
 
-  emailAuth(req, res) {
+  async joinAuth(req, res) {
     const { email } = req.body
-    if (!email || findUserEmail(email)) {
-      res.json({
+    if (!email || (await findUserEmail(email))) {
+      return res.json({
         success: false,
         message: 'NO EMAIL INFO.',
       })
-      return
     }
 
     const mailConfig = {
@@ -46,29 +48,50 @@ class UserController {
 
     const transporter = nodemailer.createTransport(mailConfig)
     transporter.sendMail(message)
-    res.json({
+    return res.status(200).json({
       success: true,
       authKey: `${authKey}`,
     })
   }
 
-  join(req, res) {
+  async join(req, res) {
     const { email, name, password, hakbeon } = req.body
     if (!email || !name || !password || !hakbeon) {
-      res.json({
+      return res.json({
         success: false,
         message: 'body information is wrong.',
       })
-      return
     }
-    if (!saveUserToDB({ email, name, password, hakbeon })) {
-      res.json({
+    const dbResult = await saveUserToDB({ email, name, password, hakbeon })
+    if (!dbResult) {
+      return res.json({
         success: false,
         message: 'DB save failed.',
       })
-      return
     }
-    res.json({
+    return res.status(200).json({
+      success: true,
+    })
+  }
+
+  async login(req, res) {
+    const { email, password } = req.body
+    if (!email || !password) {
+      return res.json({
+        success: false,
+        message: 'body information is wrong.',
+      })
+    }
+    const verifyResult = await verifyUser({ email, password })
+    if (!verifyResult) {
+      return res.json({
+        success: false,
+        message: 'email or password is wrong.',
+      })
+    }
+
+    // TODO : 로그인 세션 해야함.
+    return res.status(200).json({
       success: true,
     })
   }

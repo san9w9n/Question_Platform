@@ -38,11 +38,3 @@ module.exports = {
   saveUserToDB,
   verifyUser,
 }
-
-// jsdoc
-// verifyUser() return user_id로 변경
-// 공백이슈
-// forEach문 break
-// user.controller.js async로 변경해야함
-// verifyUser()에서 row가 2개일 경우는 없겠지?
-// saveUserToDB() return ?
