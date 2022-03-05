@@ -3,23 +3,16 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable no-console */
 
-const { Client } = require('pg')
+const { Pool } = require('pg')
+const config = require('./config')
 
-const client = new Client({
-  user: process.env.PGID,
-  host: process.env.DB_HOST,
-  database: process.env.DATABASE,
-  password: process.env.PGPW,
-  port: 5432,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-})
+const pool = new Pool(config)
 
-client.on('error', (err) => {
-  console.error('Database error', err.stack)
-})
+async function query(_query, params) {
+  const { rows } = await pool.query(_query, params)
+  return rows
+}
 
 module.exports = {
-  client,
+  query,
 }
