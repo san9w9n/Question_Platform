@@ -15,10 +15,7 @@ class UserController {
   }
 
   initializeRoutes() {
-    this.router
-      .post('/join/auth', this.joinAuth)
-      .post('/join', this.join)
-      .post('/login', this.login)
+    this.router.post('/join/auth', this.joinAuth).post('/join', this.join).post('/login', this.login)
   }
 
   async joinAuth(req, res) {
