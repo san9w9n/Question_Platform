@@ -12,7 +12,7 @@ class UserRepository {
   }
 
   async create(userInfo) {
-    return query(`INSERT INTO students (user_pw, user_nm, user_email, user_hakbeon) VALUES ($1, $2, $3, $4)`, [
+    return query(`INSERT INTO students VALUES ($1, $2, $3, $4)`, [
       userInfo.password,
       userInfo.name,
       userInfo.email,
