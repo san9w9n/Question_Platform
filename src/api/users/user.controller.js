@@ -3,6 +3,7 @@
 const nodemailer = require('nodemailer')
 const { Router } = require('express')
 const { findUserEmail, saveUserToDB, verifyUser } = require('./user.repository')
+const campusNameData = require('./campusNameToEmail.json')
 
 class UserController {
   constructor() {
@@ -20,11 +21,33 @@ class UserController {
   }
 
   async joinAuth(req, res) {
-    const { email } = req.body
-    if (!email || (await findUserEmail(email))) {
+    const { email, campusName } = req.body
+    if (!email || !campusName) {
       return res.json({
         success: false,
-        message: 'NO EMAIL INFO.',
+        message: 'WRONG BODY INFO.',
+      })
+    }
+
+    const campusEmail = campusNameData[campusName]
+    if (!campusEmail) {
+      return res.json({
+        success: false,
+        message: 'NO CAMPUS INFO.',
+      })
+    }
+
+    if (email.indexOf(campusEmail) === -1) {
+      return res.json({
+        success: false,
+        message: 'NOT A CAMPUS EMAIL.',
+      })
+    }
+
+    if (await findUserEmail(email)) {
+      return res.json({
+        success: false,
+        message: 'ALREADY JOINED.',
       })
     }
 
@@ -56,19 +79,21 @@ class UserController {
 
   async join(req, res) {
     const { email, name, password, hakbeon } = req.body
+
     if (!email || !name || !password || !hakbeon) {
       return res.json({
         success: false,
         message: 'body information is wrong.',
       })
     }
-    const dbResult = await saveUserToDB({ email, name, password, hakbeon })
-    if (!dbResult) {
+
+    if (!(await saveUserToDB({ email, name, password, hakbeon }))) {
       return res.json({
         success: false,
         message: 'DB save failed.',
       })
     }
+
     return res.status(200).json({
       success: true,
     })
