@@ -1,5 +1,6 @@
 const express = require('express')
 const session = require('express-session')
+const cors = require('cors')
 const errorMiddleware = require('./middlewares/error-middlewares')
 const notFoundMiddleware = require('./middlewares/notFound-middlewares')
 require('dotenv').config()
@@ -27,6 +28,7 @@ class App {
   }
 
   initializeMiddlewares() {
+    this.app.use(cors())
     this.app.use(express.json())
     this.app.use(express.urlencoded({ extended: true }))
     this.app.use(

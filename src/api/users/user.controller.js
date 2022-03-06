@@ -2,6 +2,7 @@
 
 const nodemailer = require('nodemailer')
 const { Router } = require('express')
+const { hash } = require('bcrypt')
 const { findUserEmail, saveUserToDB, verifyUser } = require('./user.repository')
 const campusNameData = require('./campusNameToEmail.json')
 
@@ -78,15 +79,17 @@ class UserController {
   }
 
   async join(req, res) {
-    const { email, name, password, hakbeon } = req.body
+    const { email, name, hakbeon } = req.body
+    const inputPassword = req.body.password
 
-    if (!email || !name || !password || !hakbeon) {
+    if (!email || !name || !inputPassword || !hakbeon) {
       return res.json({
         success: false,
         message: 'body information is wrong.',
       })
     }
 
+    const password = await hash(inputPassword, 10)
     if (!(await saveUserToDB({ email, name, password, hakbeon }))) {
       return res.json({
         success: false,
