@@ -3,8 +3,11 @@
 const App = require('./app')
 const IndexController = require('./api/index/index.controller')
 const UserController = require('./api/users/user.controller')
+const Database = require('./lib/database')
 
-function startServer() {
+async function startServer() {
+  await Database.initializeDatabase()
+  console.log(await Database.query(`SELECT * FROM students`))
   const app = new App([new IndexController(), new UserController()])
   app.listen()
 }
