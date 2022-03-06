@@ -1,21 +1,23 @@
 /* eslint-disable class-methods-use-this */
 
-const nodemailer = require('nodemailer')
 const { Router } = require('express')
-const { hash } = require('bcrypt')
-const { findUserEmail, saveUserToDB, verifyUser } = require('./user.repository')
-const campusNameData = require('./campusNameToEmail.json')
+const campusNameData = require('../../../campusNameToEmail.json')
+const UserRepository = require('./user.repository')
+const UserService = require('./user.service')
 
 class UserController {
   constructor() {
+    this.userService = new UserService(new UserRepository())
     this.path = '/users'
     this.router = Router()
-
     this.initializeRoutes()
   }
 
   initializeRoutes() {
-    this.router.post('/join/auth', this.joinAuth).post('/join', this.join).post('/login', this.login)
+    this.router
+      .post('/join/auth', this.joinAuth.bind(this))
+      .post('/join', this.join.bind(this))
+      .post('/login', this.login.bind(this))
   }
 
   async joinAuth(req, res) {
@@ -42,60 +44,31 @@ class UserController {
       })
     }
 
-    if (await findUserEmail(email)) {
-      return res.json({
-        success: false,
-        message: 'ALREADY JOINED.',
-      })
-    }
-
-    const mailConfig = {
-      service: 'Naver',
-      host: 'smtp.naver.com',
-      port: 587,
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PW,
-      },
-    }
-
-    const authKey = Math.random().toString(36).slice(2)
-    const message = {
-      from: process.env.EMAIL,
-      to: email,
-      subject: '[Hands up] 이메일 인증 요청 메일입니다.',
-      html: `${authKey} 를 입력하세요.`,
-    }
-
-    const transporter = nodemailer.createTransport(mailConfig)
-    transporter.sendMail(message)
-    return res.status(200).json({
-      success: true,
-      authKey: `${authKey}`,
+    const authKey = await this.userService.joinAuth(email)
+    const success = !!authKey
+    const message = success ? 'Email auth key has issued.' : 'Email auth key issue failed.'
+    return res.json({
+      success,
+      message,
+      authKey,
     })
   }
 
   async join(req, res) {
-    const { email, name, hakbeon } = req.body
-    const inputPassword = req.body.password
+    const { email, name, password, hakbeon } = req.body
 
-    if (!email || !name || !inputPassword || !hakbeon) {
+    if (!email || !name || !password || !hakbeon) {
       return res.json({
         success: false,
         message: 'body information is wrong.',
       })
     }
 
-    const password = await hash(inputPassword, 10)
-    if (!(await saveUserToDB({ email, name, password, hakbeon }))) {
-      return res.json({
-        success: false,
-        message: 'DB save failed.',
-      })
-    }
-
-    return res.status(200).json({
-      success: true,
+    const success = await this.userService.join(email, name, password, hakbeon)
+    const message = success ? 'Join success.' : 'Join failed.'
+    return res.json({
+      success,
+      message,
     })
   }
 
@@ -104,20 +77,16 @@ class UserController {
     if (!email || !password) {
       return res.json({
         success: false,
-        message: 'body information is wrong.',
-      })
-    }
-    const verifyResult = await verifyUser({ email, password })
-    if (!verifyResult) {
-      return res.json({
-        success: false,
-        message: 'email or password is wrong.',
+        message: 'Body information is wrong.',
       })
     }
 
-    // TODO : 로그인 세션 해야함.
-    return res.status(200).json({
-      success: true,
+    const success = await this.userService.login(email, password)
+    const message = success ? 'Login success.' : 'Login failed.'
+
+    return res.json({
+      success,
+      message,
     })
   }
 }

@@ -2,12 +2,16 @@
 const { query } = require('../../lib/database')
 
 class UserRepository {
-  static async findUserEmail(email) {
+  constructor() {
+    this.table = 'users'
+  }
+
+  async findByEmail(email) {
     const rows = await query(`SELECT FROM students WHERE user_email=$1`, [email])
     return rows.length > 0
   }
 
-  static async saveUserToDB(userInfo) {
+  async create(userInfo) {
     return query(`INSERT INTO students (user_pw, user_nm, user_email, user_hakbeon) VALUES ($1, $2, $3, $4)`, [
       userInfo.password,
       userInfo.name,
@@ -18,7 +22,7 @@ class UserRepository {
       .catch(() => false)
   }
 
-  static async verifyUser(userInfo) {
+  async verify(userInfo) {
     const rows = await query(`SELECT user_id FROM students WHERE user_pw=$1 and user_email=$2`, [
       userInfo.password,
       userInfo.email,
@@ -35,4 +39,3 @@ module.exports = UserRepository
 // 가입날짜
 // Client vs. Pool
 // 학번이 왜필요했더라
-// printWidth : 120
