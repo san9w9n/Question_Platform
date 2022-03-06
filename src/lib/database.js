@@ -2,54 +2,19 @@
 /* eslint-disable no-console */
 
 const { Pool } = require('pg')
+const { config } = require('../config')
 
 let pool
 
-class Database {
-  static async initializeDatabase() {
-    pool = new Pool({
-      user: process.env.PGID,
-      host: process.env.DB_HOST,
-      database: process.env.DATABASE,
-      password: process.env.PGPW,
-      port: 5432,
-      ssl: {
-        rejectUnauthorized: false,
-      },
-    })
-  }
-
-  static async query(_query, params) {
-    return pool.query(_query, params).then((res) => res.rows)
-  }
+async function initializeDatabase() {
+  pool = new Pool(config)
 }
 
-// class Database {
-//   static pool
+async function query(_query, params) {
+  return pool.query(_query, params).then((res) => res.rows)
+}
 
-//   static async initializeDatabase() {
-//     this.pool = new Pool({
-//       user: process.env.PGID,
-//       host: process.env.DB_HOST,
-//       database: process.env.DATABASE,
-//       password: process.env.PGPW,
-//       port: 5432,
-//       ssl: {
-//         rejectUnauthorized: false,
-//       },
-//     })
-//   }
-
-//   static async query(_query, params) {
-//     let param
-//     if (params && params.constructor === Object) {
-//       param = Object.values(params)
-//     } else {
-//       param = params
-//     }
-//     const result = await this.pool.query(_query, param)
-//     return result.rows
-//   }
-// }
-
-module.exports = Database
+module.exports = {
+  initializeDatabase,
+  query,
+}
