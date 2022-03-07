@@ -1,34 +1,60 @@
+/* eslint-disable class-methods-use-this */
 /* eslint-disable no-console */
-const { client } = require('../../lib/database')
 
-// test
+const { queryAtOnce, queryMore, begin, end } = require('../../lib/database')
 
-async function showUsers() {
-  const query = await client.query('SELECT * FROM students')
-  const students = []
-  await query.rows.forEach((row) => {
-    students.push(row)
-  })
-  console.log(students)
+class UserRepository {
+  constructor() {
+    this.table = 'users'
+  }
+
+  async findByEmail(email) {
+    const rows = await queryAtOnce(`SELECT * FROM students WHERE email like $1`, [email])
+    return rows.length ? rows[0] : undefined
+  }
+
+  async create(userInfo) {
+    try {
+      await queryAtOnce(`INSERT INTO students(name, email, password, hakbeon) VALUES ($1, $2, $3, $4)`, [
+        userInfo.name,
+        userInfo.email,
+        userInfo.password,
+        userInfo.hakbeon,
+      ])
+    } catch (err) {
+      console.error(err.stack)
+      return false
+    }
+    return true
+  }
+
+  async saveRefreshToken(refreshToken, userId) {
+    const client = await begin()
+    if (!client) {
+      return false
+    }
+    const deleteResult = await queryMore(`DELETE FROM tokens WHERE user_id=$1`, [userId], client)
+    if (!deleteResult) {
+      return false
+    }
+    const insertResult = await queryMore(
+      `INSERT INTO tokens(refresh_token, user_id) VALUES ($1, $2)`,
+      [refreshToken, userId],
+      client
+    )
+    if (!insertResult) {
+      return false
+    }
+    await end(client)
+    return true
+  }
 }
 
-async function findUserEmail(email) {}
+module.exports = UserRepository
 
-function saveUserToDB(userInfo) {
-  // param : 유저 정보
-  // return : 저장 잘 되었는지 return
-  console.log(userInfo)
-}
-
-function verifyUser(userInfo) {
-  // param : 유저 정보
-  // return : db의 정보와 일치하는지 return
-  console.log(userInfo)
-}
-
-module.exports = {
-  showUsers,
-  findUserEmail,
-  saveUserToDB,
-  verifyUser,
-}
+// error처리 해야함
+// email varchar로 바꿈
+// 테스트 api 만들기
+// 가입날짜
+// Client vs. Pool
+// 학번이 왜필요했더라

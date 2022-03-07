@@ -1,73 +1,54 @@
-// @ts-check
-
-/* eslint-disable class-methods-use-this */
 /* eslint-disable no-console */
 
-const { Client } = require('pg')
+const { Pool } = require('pg')
+const { config } = require('../config')
 
-class Database {
-  Database() {
-    console.log('constructor')
-  }
+let pool
 
-  initializeDatabase() {
-    //     async function showStudents() {
-    //       const client = await new Client({
-    //         user: process.env.PGID,
-    //         host: process.env.DB_HOST,
-    //         database: process.env.DATABASE,
-    //         password: process.env.PGPW,
-    //         port: 5432,
-    //         ssl: {
-    //           rejectUnauthorized: false,
-    //         },
-    //       })
-    //       // this.client.connect((err) => {
-    //       //   if (err) console.log('database connection failed.')
-    //       //   else console.log('database connection success.')
-    //       // })
-    //       // error handling
-    //       // this.client.on('error', (err) => {
-    //       //   console.error('Database error', err.stack)
-    //       // })
-    //       await client.connect((err) => {
-    //         if (err) console.log('database connection failed.')
-    //         else console.log('database connection success.')
-    //       })
-    //       const query = await client.query('SELECT * FROM students')
-    //       const students = []
-    //       await query.rows.forEach((row) => {
-    //         students.push(row)
-    //       })
-    //       console.log(students)
-    //       await client.end()
-    //     }
-    //     showStudents()
-  }
+const initializeDatabase = async () => {
+  pool = new Pool(config)
 }
 
-const client = new Client({
-  user: process.env.PGID,
-  host: process.env.DB_HOST,
-  database: process.env.DATABASE,
-  password: process.env.PGPW,
-  port: 5432,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-})
+const queryAtOnce = async (query, params) => {
+  const { rows } = await pool.query(query, params)
+  return rows
+}
 
-client.connect((err) => {
-  if (err) console.log('database connection failed.')
-  else console.log('database connection success.')
-})
+const begin = async () => {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+  } catch (err) {
+    console.error(err.stack)
+    await client.query('ROLLBACK')
+    client.release()
+    return undefined
+  }
+  return client
+}
 
-// error-handling
-client.on('error', (err) => {
-  console.error('Database error', err.stack)
-})
+const queryMore = async (query, params, client) => {
+  let result
+  try {
+    result = await client.query(query, params)
+  } catch (err) {
+    console.error(err.stack)
+    await client.query('ROLLBACK')
+    client.release()
+    return undefined
+  }
+  return result.rows
+}
+
+const end = async (client) => {
+  await client.query('COMMIT')
+  client.release()
+}
 
 module.exports = {
-  Database,
-  client,
+  initializeDatabase,
+  queryAtOnce,
+  begin,
+  queryMore,
+  end,
 }

@@ -1,54 +1,98 @@
 /* eslint-disable class-methods-use-this */
 
-const nodemailer = require('nodemailer')
 const { Router } = require('express')
-const { findUserEmail } = require('./user.repository')
+const campusNameData = require('../../../campusNameToEmail.json')
+const UserRepository = require('./user.repository')
+const UserService = require('./user.service')
 
 class UserController {
   constructor() {
+    this.userService = new UserService(new UserRepository())
     this.path = '/users'
     this.router = Router()
-
     this.initializeRoutes()
   }
 
   initializeRoutes() {
-    this.router.post('/email/auth', this.emailAuth)
+    this.router
+      .post('/join/auth', this.joinAuth.bind(this))
+      .post('/join', this.join.bind(this))
+      .post('/login', this.login.bind(this))
   }
 
-  emailAuth(req, res) {
-    const { email } = req.body
-    if (!email || findUserEmail(email)) {
-      res.json({
+  async joinAuth(req, res) {
+    const { email, campusName } = req.body
+    if (!email || !campusName) {
+      return res.json({
         success: false,
-        message: 'NO EMAIL INFO.',
+        message: 'WRONG BODY INFO.',
       })
-      return
     }
 
-    const mailConfig = {
-      service: 'Naver',
-      host: 'smtp.naver.com',
-      port: 587,
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PW,
-      },
+    const campusEmail = campusNameData[campusName]
+    if (!campusEmail) {
+      return res.json({
+        success: false,
+        message: 'NO CAMPUS INFO.',
+      })
     }
 
-    const authKey = Math.random().toString(36).slice(2)
-    const message = {
-      from: process.env.EMAIL,
-      to: email,
-      subject: '[Hands up] 이메일 인증 요청 메일입니다.',
-      html: `${authKey} 를 입력하세요.`,
+    if (email.indexOf(campusEmail) === -1) {
+      return res.json({
+        success: false,
+        message: 'NOT A CAMPUS EMAIL.',
+      })
     }
 
-    const transporter = nodemailer.createTransport(mailConfig)
-    transporter.sendMail(message)
-    res.json({
-      success: true,
-      authKey: `${authKey}`,
+    const authKey = await this.userService.joinAuth(email)
+    const success = !!authKey
+    const message = success ? 'Email auth key has issued.' : 'Email auth key issue failed.'
+
+    return res.json({
+      success,
+      message,
+      authKey,
+    })
+  }
+
+  async join(req, res) {
+    const { email, name, password, hakbeon } = req.body
+
+    if (!email || !name || !password || !hakbeon) {
+      return res.json({
+        success: false,
+        message: 'body information is wrong.',
+      })
+    }
+
+    const success = await this.userService.join(email, name, password, hakbeon)
+    const message = success ? 'Join success.' : 'Join failed.'
+
+    return res.json({
+      success,
+      message,
+    })
+  }
+
+  async login(req, res) {
+    const { email, password } = req.body
+    if (!email || !password) {
+      return res.json({
+        success: false,
+        message: 'Body information is wrong.',
+      })
+    }
+
+    const accessToken = await this.userService.login(email, password)
+    const success = !!accessToken
+    const message = success ? 'Login success.' : 'Login failed.'
+
+    if (success) {
+      res.cookie('accessToken', accessToken)
+    }
+    return res.json({
+      success,
+      message,
     })
   }
 }
