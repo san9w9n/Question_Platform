@@ -47,6 +47,7 @@ class UserController {
     const authKey = await this.userService.joinAuth(email)
     const success = !!authKey
     const message = success ? 'Email auth key has issued.' : 'Email auth key issue failed.'
+
     return res.json({
       success,
       message,
@@ -66,6 +67,7 @@ class UserController {
 
     const success = await this.userService.join(email, name, password, hakbeon)
     const message = success ? 'Join success.' : 'Join failed.'
+
     return res.json({
       success,
       message,
@@ -81,9 +83,13 @@ class UserController {
       })
     }
 
-    const success = await this.userService.login(email, password)
+    const accessToken = await this.userService.login(email, password)
+    const success = !!accessToken
     const message = success ? 'Login success.' : 'Login failed.'
 
+    if (success) {
+      res.cookie('accessToken', accessToken)
+    }
     return res.json({
       success,
       message,

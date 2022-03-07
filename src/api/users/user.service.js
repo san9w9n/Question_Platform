@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer')
-const { hash } = require('bcrypt')
+const { hash, compare } = require('bcrypt')
+const { sign } = require('../../lib/jwt')
 
 class UserService {
   constructor(userRepository) {
@@ -8,7 +9,7 @@ class UserService {
   }
 
   async joinAuth(email) {
-    if (await this.userRepository.findByEmail(email)) return ''
+    if (await this.userRepository.findByEmail(email)) return undefined
 
     const mailConfig = {
       service: 'Naver',
@@ -38,8 +39,36 @@ class UserService {
     return this.userRepository.create({ email, name, password, hakbeon })
   }
 
-  async login(email, password) {
-    return this.userRepository.verify({ email, password })
+  async login(email, inputPassword) {
+    const student = await this.userRepository.findByEmail(email)
+    if (!student) {
+      return false
+    }
+
+    const result = await compare(inputPassword, student.password)
+    if (!result) {
+      return false
+    }
+
+    const refreshToken = sign(
+      {
+        name: student.name,
+        email: student.email,
+      },
+      undefined,
+      true
+    )
+    await this.userRepository.saveRefreshToken(refreshToken, student.user_id)
+
+    const accessToken = sign(
+      {
+        name: student.name,
+        email: student.email,
+      },
+      undefined,
+      false
+    )
+    return accessToken
   }
 }
 
