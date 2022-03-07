@@ -7,7 +7,7 @@ const Database = require('./lib/database')
 
 async function startServer() {
   await Database.initializeDatabase()
-  console.log(await Database.query(`SELECT * FROM students`))
+  console.log(await Database.queryAtOnce(`SELECT * FROM students`))
   const app = new App([new IndexController(), new UserController()])
   app.listen()
 }
