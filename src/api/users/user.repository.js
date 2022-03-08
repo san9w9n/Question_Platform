@@ -22,7 +22,6 @@ class UserRepository {
         userInfo.hakbeon,
       ])
     } catch (err) {
-      console.error(err.stack)
       return false
     }
     return true
