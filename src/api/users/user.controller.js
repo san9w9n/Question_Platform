@@ -84,12 +84,17 @@ class UserController {
       })
     }
 
-    const accessToken = await this.userService.login(email, password)
-    const success = !!accessToken
+    const tokens = await this.userService.login(email, password)
+    const success = !!tokens
     const message = success ? 'Login success.' : 'Login failed.'
 
     if (success) {
-      res.cookie('accessToken', accessToken)
+      res.cookie('accessToken', tokens.accessToken, {
+        httpOnly: true,
+      })
+      res.cookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+      })
     }
     return res.json({
       success,
@@ -98,7 +103,9 @@ class UserController {
   }
 
   async logout(req, res) {
-    res.cookie('accessToken', '').json({
+    res.clearCookie('accessToken')
+    res.clearCookie('refreshToken')
+    res.json({
       success: true,
       message: 'Logout success.',
     })

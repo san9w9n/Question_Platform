@@ -12,8 +12,15 @@ const sign = (payload, options, refreshFlag) =>
 
 const verify = (token) =>
   jwt.verify(token, jwtSecret, (err, decoded) => {
-    if (err) return undefined
-    return JSON.parse(decoded)
+    if (err)
+      return {
+        verified: false,
+        body: err,
+      }
+    return {
+      verified: true,
+      body: decoded,
+    }
   })
 
 module.exports = {
