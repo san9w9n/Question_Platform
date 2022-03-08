@@ -18,6 +18,7 @@ class UserController {
       .post('/join/auth', this.joinAuth.bind(this))
       .post('/join', this.join.bind(this))
       .post('/login', this.login.bind(this))
+      .post('/logout', this.logout.bind(this))
   }
 
   async joinAuth(req, res) {
@@ -93,6 +94,13 @@ class UserController {
     return res.json({
       success,
       message,
+    })
+  }
+
+  async logout(req, res) {
+    res.cookie('accessToken', '').json({
+      success: true,
+      message: 'Logout success.',
     })
   }
 }

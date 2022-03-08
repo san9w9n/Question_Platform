@@ -33,10 +33,12 @@ class UserRepository {
     if (!client) {
       return false
     }
+
     const deleteResult = await queryMore(`DELETE FROM tokens WHERE user_id=$1`, [userId], client)
     if (!deleteResult) {
       return false
     }
+
     const insertResult = await queryMore(
       `INSERT INTO tokens(refresh_token, user_id) VALUES ($1, $2)`,
       [refreshToken, userId],
@@ -45,6 +47,7 @@ class UserRepository {
     if (!insertResult) {
       return false
     }
+
     await end(client)
     return true
   }

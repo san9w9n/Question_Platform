@@ -10,6 +10,13 @@ const sign = (payload, options, refreshFlag) =>
     ...options,
   })
 
+const verify = (token) =>
+  jwt.verify(token, jwtSecret, (err, decoded) => {
+    if (err) return undefined
+    return JSON.parse(decoded)
+  })
+
 module.exports = {
   sign,
+  verify,
 }
