@@ -1,17 +1,18 @@
 const jwt = require('jsonwebtoken')
 
-const jwtSecret = process.env.JWT_SECRET || 'JWTSECRET_FOR_TEST'
+const accessSecret = process.env.ACCESS_SECRET || 'ACCESS_SECRET_FOR_TEST'
+const refreshSecret = process.env.REFRESH_SECRET || 'REFRESH_SECRET_FOR_TEST'
 const algorithm = process.env.JWT_ALGO || 'HS256'
 
 const sign = (payload, options, refreshFlag) =>
-  jwt.sign(payload, jwtSecret, {
+  jwt.sign(payload, refreshFlag ? refreshSecret : accessSecret, {
     algorithm,
     expiresIn: refreshFlag ? '15d' : '30m',
     ...options,
   })
 
-const verify = (token) =>
-  jwt.verify(token, jwtSecret, (err, decoded) => {
+const verify = (token, refreshFlag) =>
+  jwt.verify(token, refreshFlag ? refreshSecret : accessSecret, (err, decoded) => {
     if (err)
       return {
         verified: false,

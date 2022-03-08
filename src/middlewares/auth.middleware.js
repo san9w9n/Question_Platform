@@ -10,7 +10,7 @@ const verifyToken = (req, res, next) => {
     })
     return
   }
-  const { verified, body } = verify(access)
+  const { verified, body } = verify(access, false)
   if (!verified) {
     res.status(401).json({
       success: false,
@@ -32,7 +32,7 @@ const issueAccessToken = async (req, res) => {
     return
   }
 
-  const { verified: accessVerified } = verify(access)
+  const { verified: accessVerified } = verify(access, false)
   if (accessVerified) {
     res.status(400).json({
       success: false,
@@ -41,7 +41,7 @@ const issueAccessToken = async (req, res) => {
     return
   }
 
-  const { verified: refreshVerified, body } = verify(refresh)
+  const { verified: refreshVerified, body } = verify(refresh, true)
   if (!refreshVerified) {
     res.status(400).json({
       success: false,
