@@ -52,7 +52,7 @@ class UserService {
 
     const refreshToken = sign(
       {
-        name: student.name,
+        id: student.user_id,
         email: student.email,
       },
       undefined,
