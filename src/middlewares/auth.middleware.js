@@ -1,35 +1,79 @@
-const verify = require('../lib/jwt')
 const { queryAtOnce } = require('../lib/database')
+const { sign, verify } = require('../lib/jwt')
 
-const verifyToken = async (req, res, next) => {
-  const token = req.cookies.accessToken
-  if (!token) {
-    res.json({
-      success: false,
-      message: 'Login first.',
-    })
-    return
-  }
-
-  const decoded = verify(token)
-  if (!decoded) {
+const verifyToken = (req, res, next) => {
+  const access = req.cookies.accessToken
+  if (!access) {
     res.status(401).json({
       success: false,
-      message: 'Auth failed.',
+      message: 'Login please.',
+    })
+    return
+  }
+  const { verified, body } = verify(access)
+  if (!verified) {
+    res.status(401).json({
+      success: false,
+      message: body.name,
+    })
+    return
+  }
+  next()
+}
+
+const issueAccessToken = async (req, res) => {
+  const access = req.cookies.accessToken
+  const refresh = req.cookies.refreshToken
+  if (!access || !refresh) {
+    res.status(400).json({
+      success: false,
+      message: 'Append both accesstoken and refreshtoken.',
     })
     return
   }
 
-  const { id } = decoded
-  const rows = await queryAtOnce(`SELECT * FROM tokens WHERE id=$1`, [id])
-  if (!rows.length) {
-    // 재발급 받아야함.
+  const { verified: accessVerified } = verify(access)
+  if (accessVerified) {
+    res.status(400).json({
+      success: false,
+      message: 'Do not need to issue access token again.',
+    })
+    return
   }
 
-  // const decoded = await verify(accessToken, )
-  next()
+  const { verified: refreshVerified, body } = verify(refresh)
+  if (!refreshVerified) {
+    res.status(400).json({
+      success: false,
+      message: 'Refresh token expired, login again.',
+    })
+    return
+  }
+
+  const rows = queryAtOnce('SELECT * FROM tokens WHERE user_id=$1', [body.id])
+  if (!rows.length || rows[0].refresh_token !== refresh) {
+    res.status(400).json({
+      success: false,
+      message: 'Refresh token is changed, login again.',
+    })
+    return
+  }
+
+  const newAccessToken = sign(
+    {
+      id: body.id,
+      email: body.email,
+    },
+    undefined,
+    false
+  )
+
+  res.cookie('accessToken', newAccessToken, {
+    httpOnly: true,
+  })
 }
 
 module.exports = {
   verifyToken,
+  issueAccessToken,
 }

@@ -42,12 +42,12 @@ class UserService {
   async login(email, inputPassword) {
     const student = await this.userRepository.findByEmail(email)
     if (!student) {
-      return false
+      return undefined
     }
 
     const result = await compare(inputPassword, student.password)
     if (!result) {
-      return false
+      return undefined
     }
 
     const refreshToken = sign(
@@ -58,17 +58,20 @@ class UserService {
       undefined,
       true
     )
-    await this.userRepository.saveRefreshToken(refreshToken, student.user_id)
-
     const accessToken = sign(
       {
-        name: student.name,
+        id: student.user_id,
         email: student.email,
       },
       undefined,
       false
     )
-    return accessToken
+    await this.userRepository.saveRefreshToken(refreshToken, student.user_id)
+
+    return {
+      accessToken,
+      refreshToken,
+    }
   }
 }
 
