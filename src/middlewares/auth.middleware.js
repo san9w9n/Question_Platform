@@ -18,6 +18,7 @@ const verifyToken = (req, res, next) => {
     })
     return
   }
+  req.user_id = body.id
   next()
 }
 
