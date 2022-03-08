@@ -7,7 +7,10 @@ let pool
 
 const initializeDatabase = async () => {
   pool = new Pool(config)
-  pool.on('error', (err) => console.err(err.stack))
+  pool.on('error', (err) => {
+    console.err(err.stack)
+    throw err
+  })
 }
 
 const queryAtOnce = async (query, params) => {
