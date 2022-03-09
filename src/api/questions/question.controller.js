@@ -17,15 +17,16 @@ class QuestionController {
     this.router
       .get('/:course_id', this.indexQuestion.bind(this))
       .get('/:course_id/:question_id', this.showQuestion.bind(this))
-      .post('/:course_id', this.upload.single('image'), this.createQuestion.bind(this))
+      .post('/:course_id', this.upload.array('image', 10), this.createQuestion.bind(this))
+      // .put('/:course_id/:question_id', this.updateQuestion.bind(this))
+      .delete('/:course_id/:question_id', this.deleteQuestion.bind(this))
       .param('course_id', this.saveCourseId.bind(this))
       .param('question_id', this.saveQuestionId.bind(this))
   }
 
   async indexQuestion(req, res) {
-    console.log('indexQuestion')
-
     const { courseId } = req
+
     if (!courseId) {
       return res.json({
         success: false,
@@ -38,9 +39,8 @@ class QuestionController {
   }
 
   async showQuestion(req, res) {
-    console.log('showQuestion')
-
     const { questionId } = req
+
     if (!questionId) {
       return res.json({
         success: false,
@@ -61,11 +61,10 @@ class QuestionController {
   }
 
   async createQuestion(req, res) {
-    console.log('createQuestion')
-
     const { courseId } = req
     const { userId, title, content } = req.body
-    const image = `/public/image/${req.file.filename}`
+    const images = req.files.map((file) => file.filename)
+
     if (!userId || !courseId || !title || !content) {
       return res.json({
         success: false,
@@ -73,17 +72,32 @@ class QuestionController {
       })
     }
 
-    const createResult = await this.QuestionRepository.create({
-      userId,
-      courseId,
-      title,
-      content,
-      image,
-    })
+    const createResult = await this.QuestionRepository.create({ userId, courseId, title, content, images })
     const message = createResult ? 'Question regestered.' : 'Create failed.'
 
     return res.json({
       createResult,
+      message,
+    })
+  }
+
+  // async updateQuestion() {}
+
+  async deleteQuestion(req, res) {
+    const { questionId } = req
+
+    if (!questionId) {
+      return res.json({
+        success: false,
+        message: 'WRONG BODY INFO',
+      })
+    }
+
+    const deleteResult = await this.QuestionRepository.delete(questionId)
+    const message = deleteResult ? 'Question deleted.' : 'Delete failed.'
+
+    return res.json({
+      deleteResult,
       message,
     })
   }
