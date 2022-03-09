@@ -15,7 +15,7 @@ class QuestionRepository {
 
   async show(questionId) {
     const sql = `
-      SELECT user_id, title, content, image, created_at
+      SELECT user_id, title, content, images, created_at
       FROM questions
       WHERE question_id=$1
     `
@@ -25,7 +25,7 @@ class QuestionRepository {
 
   async create(questionInfo) {
     const sql = `
-      INSERT INTO questions(user_id, course_id, title, content, image)
+      INSERT INTO questions(user_id, course_id, title, content, images)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING question_id
     `
@@ -35,7 +35,7 @@ class QuestionRepository {
         questionInfo.courseId,
         questionInfo.title,
         questionInfo.content,
-        questionInfo.image,
+        questionInfo.images,
       ])
     } catch (err) {
       console.log(err)
@@ -44,14 +44,19 @@ class QuestionRepository {
     return true
   }
 
-  async test(info) {
+  async delete(questionId) {
     const sql = `
-    SELECT user_id, name, email
-    FROM students
-    WHERE user_id>$1 and user_id<$2
+      DELETE
+      FROM questions
+      WHERE question_id = ?
     `
-    const rows = await queryAtOnce(sql, [info.courseId, info.questionId])
-    return rows
+    try {
+      await queryAtOnce(sql, [questionId])
+    } catch (err) {
+      console.log(err)
+      return false
+    }
+    return true
   }
 }
 
