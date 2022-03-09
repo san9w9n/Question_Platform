@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 
 const { Router } = require('express')
-const campusNameData = require('../../../public/data/campusNameToEmail.json')
+const campusNameData = require('../../../campusNameToEmail.json')
 const UserRepository = require('./user.repository')
 const UserService = require('./user.service')
 
