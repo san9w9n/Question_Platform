@@ -3,6 +3,8 @@
 
 const { Router } = require('express')
 
+const { verifyToken } = require('../../middlewares/auth.middleware')
+
 class IndexController {
   constructor() {
     this.path = '/'
@@ -11,7 +13,7 @@ class IndexController {
   }
 
   initializeRoutes() {
-    this.router.get('/', this.home)
+    this.router.get('/', verifyToken, this.home)
   }
 
   home(req, res) {

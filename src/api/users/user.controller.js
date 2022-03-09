@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 
 const { Router } = require('express')
-const campusNameData = require('../../../campusNameToEmail.json')
+const campusNameData = require('../../../public/data/campusNameToEmail.json')
 const UserRepository = require('./user.repository')
 const UserService = require('./user.service')
 
@@ -15,12 +15,14 @@ class UserController {
 
   initializeRoutes() {
     this.router
-      .post('/join/auth', this.joinAuth.bind(this))
+      .post('/join/auth/receive', this.emailAuthReceive.bind(this))
+      .post('/join/auth/send', this.emailAuthSend.bind(this))
       .post('/join', this.join.bind(this))
       .post('/login', this.login.bind(this))
+      .post('/logout', this.logout.bind(this))
   }
 
-  async joinAuth(req, res) {
+  async emailAuthSend(req, res) {
     const { email, campusName } = req.body
     if (!email || !campusName) {
       return res.json({
@@ -44,14 +46,29 @@ class UserController {
       })
     }
 
-    const authKey = await this.userService.joinAuth(email)
-    const success = !!authKey
+    const success = await this.userService.emailAuthSend(email)
     const message = success ? 'Email auth key has issued.' : 'Email auth key issue failed.'
 
     return res.json({
       success,
       message,
-      authKey,
+    })
+  }
+
+  async emailAuthReceive(req, res) {
+    const { email, authKey } = req.body
+    if (!email || !authKey) {
+      return res.json({
+        success: false,
+        message: 'WRONG BODY INFO.',
+      })
+    }
+    const success = await this.userService.emailAuthReceive(email, authKey)
+    const message = success ? 'Email auth success.' : 'Email auth failed.'
+
+    return res.json({
+      success,
+      message,
     })
   }
 
@@ -83,16 +100,30 @@ class UserController {
       })
     }
 
-    const accessToken = await this.userService.login(email, password)
-    const success = !!accessToken
+    const tokens = await this.userService.login(email, password)
+    const success = !!tokens
     const message = success ? 'Login success.' : 'Login failed.'
 
     if (success) {
-      res.cookie('accessToken', accessToken)
+      res.cookie('accessToken', tokens.accessToken, {
+        httpOnly: true,
+      })
+      res.cookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+      })
     }
     return res.json({
       success,
       message,
+    })
+  }
+
+  async logout(req, res) {
+    res.clearCookie('accessToken')
+    res.clearCookie('refreshToken')
+    res.json({
+      success: true,
+      message: 'Logout success.',
     })
   }
 }

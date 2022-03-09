@@ -5,11 +5,12 @@ const { sign } = require('../../lib/jwt')
 class UserService {
   constructor(userRepository) {
     this.userRepository = userRepository
-    this.joinAuth.bind(this)
   }
 
-  async joinAuth(email) {
-    if (await this.userRepository.findByEmail(email)) return undefined
+  async emailAuthSend(email) {
+    if (await this.userRepository.findByEmail(email)) {
+      return false
+    }
 
     const mailConfig = {
       service: 'Naver',
@@ -29,12 +30,23 @@ class UserService {
       html: `${authKey} 를 입력하세요.`,
     }
 
+    if (!(await this.userRepository.createEmailToken(email, authKey))) {
+      return false
+    }
+
     const transporter = nodemailer.createTransport(mailConfig)
     transporter.sendMail(message)
-    return authKey
+    return true
+  }
+
+  async emailAuthReceive(email, authKey) {
+    return this.userRepository.verifyEmailToken(email, authKey)
   }
 
   async join(email, name, inputPassword, hakbeon) {
+    if (!(await this.userRepository.isEmailVerified(email))) {
+      return false
+    }
     const password = await hash(inputPassword, 10)
     return this.userRepository.create({ email, name, password, hakbeon })
   }
@@ -42,33 +54,36 @@ class UserService {
   async login(email, inputPassword) {
     const student = await this.userRepository.findByEmail(email)
     if (!student) {
-      return false
+      return undefined
     }
 
     const result = await compare(inputPassword, student.password)
     if (!result) {
-      return false
+      return undefined
     }
 
     const refreshToken = sign(
       {
-        name: student.name,
+        id: student.user_id,
         email: student.email,
       },
       undefined,
       true
     )
-    await this.userRepository.saveRefreshToken(refreshToken, student.user_id)
-
     const accessToken = sign(
       {
-        name: student.name,
+        id: student.user_id,
         email: student.email,
       },
       undefined,
       false
     )
-    return accessToken
+    await this.userRepository.saveRefreshToken(refreshToken, student.user_id)
+
+    return {
+      accessToken,
+      refreshToken,
+    }
   }
 }
 

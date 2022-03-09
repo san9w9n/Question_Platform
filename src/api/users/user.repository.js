@@ -4,12 +4,14 @@
 const { queryAtOnce, queryMore, begin, end } = require('../../lib/database')
 
 class UserRepository {
-  constructor() {
-    this.table = 'users'
-  }
-
   async findByEmail(email) {
-    const rows = await queryAtOnce(`SELECT * FROM students WHERE email like $1`, [email])
+    let rows
+    try {
+      rows = await queryAtOnce(`SELECT * FROM students WHERE email like $1`, [email])
+    } catch (err) {
+      console.log(err)
+      return undefined
+    }
     return rows.length ? rows[0] : undefined
   }
 
@@ -22,7 +24,7 @@ class UserRepository {
         userInfo.hakbeon,
       ])
     } catch (err) {
-      console.error(err.stack)
+      console.log(err.stack)
       return false
     }
     return true
@@ -48,13 +50,59 @@ class UserRepository {
     await end(client)
     return true
   }
+
+  async createEmailToken(email, authKey) {
+    try {
+      await queryAtOnce(`INSERT INTO emailtokens(email, authkey, verified) VALUES ($1, $2, $3)`, [
+        email,
+        authKey,
+        'false',
+      ])
+    } catch (err) {
+      console.log(err.stack)
+      return false
+    }
+    return true
+  }
+
+  async verifyEmailToken(email, authKey) {
+    const client = await begin()
+    if (!client) {
+      return false
+    }
+
+    const findResult = await queryMore(
+      `SELECT * FROM emailtokens WHERE email like $1 and authkey=$2`,
+      [email, authKey],
+      client
+    )
+    if (!findResult) {
+      return false
+    }
+
+    const updateResult = await queryMore(`UPDATE emailtokens SET verified='true' WHERE email=$1`, [email], client)
+    if (!updateResult) {
+      return false
+    }
+
+    await end(client)
+    return true
+  }
+
+  async isEmailVerified(email) {
+    const client = await begin()
+    if (!client) {
+      return false
+    }
+
+    const findResult = await queryMore(`SELECT * FROM emailtokens WHERE email=$1 and authkey=$2`, [email, 1], client)
+    if (!findResult) {
+      return false
+    }
+    await queryMore(`DELETE FROM emailtokens WHERE email=$1`, [email], client)
+    await end(client)
+    return true
+  }
 }
 
 module.exports = UserRepository
-
-// error처리 해야함
-// email varchar로 바꿈
-// 테스트 api 만들기
-// 가입날짜
-// Client vs. Pool
-// 학번이 왜필요했더라
