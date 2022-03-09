@@ -5,11 +5,12 @@ const { sign } = require('../../lib/jwt')
 class UserService {
   constructor(userRepository) {
     this.userRepository = userRepository
-    this.joinAuth.bind(this)
   }
 
-  async joinAuth(email) {
-    if (await this.userRepository.findByEmail(email)) return undefined
+  async emailAuthSend(email) {
+    if (await this.userRepository.findByEmail(email)) {
+      return false
+    }
 
     const mailConfig = {
       service: 'Naver',
@@ -29,12 +30,23 @@ class UserService {
       html: `${authKey} 를 입력하세요.`,
     }
 
+    if (!(await this.userRepository.createEmailToken(email, authKey))) {
+      return false
+    }
+
     const transporter = nodemailer.createTransport(mailConfig)
     transporter.sendMail(message)
-    return authKey
+    return true
+  }
+
+  async emailAuthReceive(email, authKey) {
+    return this.userRepository.verifyEmailToken(email, authKey)
   }
 
   async join(email, name, inputPassword, hakbeon) {
+    if (!(await this.userRepository.isEmailVerified(email))) {
+      return false
+    }
     const password = await hash(inputPassword, 10)
     return this.userRepository.create({ email, name, password, hakbeon })
   }
