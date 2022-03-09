@@ -22,6 +22,7 @@ class UserRepository {
         userInfo.hakbeon,
       ])
     } catch (err) {
+      console.err(err.stack)
       return false
     }
     return true
@@ -53,10 +54,3 @@ class UserRepository {
 }
 
 module.exports = UserRepository
-
-// error처리 해야함
-// email varchar로 바꿈
-// 테스트 api 만들기
-// 가입날짜
-// Client vs. Pool
-// 학번이 왜필요했더라

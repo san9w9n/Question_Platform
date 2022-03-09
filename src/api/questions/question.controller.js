@@ -1,6 +1,7 @@
 /* eslint-disable class-methods-use-this */
 
 const { Router } = require('express')
+const multer = require('multer')
 const QuestionRepository = require('./question.repository')
 
 class QuestionController {
@@ -8,23 +9,17 @@ class QuestionController {
     this.QuestionRepository = new QuestionRepository()
     this.path = '/courses'
     this.router = Router()
+    this.upload = multer({ dest: 'public/image/' })
     this.initializeRoutes()
   }
 
   initializeRoutes() {
     this.router
-      .post('/:course_id/list', this.indexQuestion.bind(this))
-      .post('/:course_id/:question_id', this.showQuestion.bind(this))
-      // .post('/:course_id/:question_id/test', this.test.bind(this))
-      .post('/:course_id', this.createQuestion.bind(this))
-      .param('course_id', (req, res, next, value) => {
-        req.courseId = value
-        next()
-      })
-      .param('question_id', (req, res, next, value) => {
-        req.questionId = value
-        next()
-      })
+      .get('/:course_id', this.indexQuestion.bind(this))
+      .get('/:course_id/:question_id', this.showQuestion.bind(this))
+      .post('/:course_id', this.upload.single('image'), this.createQuestion.bind(this))
+      .param('course_id', this.saveCourseId.bind(this))
+      .param('question_id', this.saveQuestionId.bind(this))
   }
 
   async indexQuestion(req, res) {
@@ -39,7 +34,7 @@ class QuestionController {
     }
 
     const questionList = await this.QuestionRepository.index(courseId)
-    return res.send(questionList)
+    return res.json(questionList)
   }
 
   async showQuestion(req, res) {
@@ -54,15 +49,23 @@ class QuestionController {
     }
 
     const questionInfo = await this.QuestionRepository.show(questionId)
-    return res.send(questionInfo)
+    if (!questionInfo) {
+      return res.json({
+        success: false,
+        message: 'NO SUCH QUESTION',
+        description: '해당 id에 해당하는 질문이 없습니다.',
+      })
+    }
+
+    return res.json(questionInfo)
   }
 
   async createQuestion(req, res) {
     console.log('createQuestion')
 
-    const { userId, courseId, title, content } = req
-    // image 처리
-    const image = null
+    const { courseId } = req
+    const { userId, title, content } = req.body
+    const image = `/public/image/${req.file.filename}`
     if (!userId || !courseId || !title || !content) {
       return res.json({
         success: false,
@@ -70,7 +73,7 @@ class QuestionController {
       })
     }
 
-    const createResult = await this.QuestionRepository.insert({
+    const createResult = await this.QuestionRepository.create({
       userId,
       courseId,
       title,
@@ -78,19 +81,21 @@ class QuestionController {
       image,
     })
     const message = createResult ? 'Question regestered.' : 'Create failed.'
+
     return res.json({
       createResult,
       message,
     })
   }
 
-  async test(req, res) {
-    console.log('test')
+  saveCourseId(req, res, next, value) {
+    req.courseId = value
+    next()
+  }
 
-    const { courseId, questionId } = req
-    const result = await this.QuestionRepository.test({ courseId, questionId })
-
-    return res.send(result)
+  saveQuestionId(req, res, next, value) {
+    req.questionId = value
+    next()
   }
 }
 

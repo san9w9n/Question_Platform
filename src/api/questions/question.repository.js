@@ -7,6 +7,7 @@ class QuestionRepository {
       SELECT question_id, title, content, created_at
       FROM questions
       WHERE course_id=$1
+      ORDER BY created_at DESC
     `
     const rows = await queryAtOnce(sql, [courseId])
     return rows
@@ -19,24 +20,25 @@ class QuestionRepository {
       WHERE question_id=$1
     `
     const rows = await queryAtOnce(sql, [questionId])
-    // rows.length가 1이 아닐 시 에러처리
-    return rows[0]
+    return rows.length ? rows[0] : undefined
   }
 
   async create(questionInfo) {
     const sql = `
       INSERT INTO questions(user_id, course_id, title, content, image)
       VALUES ($1, $2, $3, $4, $5)
+      RETURNING question_id
     `
     try {
       await queryAtOnce(sql, [
         questionInfo.userId,
         questionInfo.courseId,
         questionInfo.title,
-        questionInfo.conent,
+        questionInfo.content,
         questionInfo.image,
       ])
     } catch (err) {
+      console.log(err)
       return false
     }
     return true
