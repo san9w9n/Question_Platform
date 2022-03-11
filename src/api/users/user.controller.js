@@ -15,14 +15,14 @@ class UserController {
 
   initializeRoutes() {
     this.router
-      .post('/join/auth/receive', this.emailAuthReceive.bind(this))
-      .post('/join/auth/send', this.emailAuthSend.bind(this))
+      .post('/verify/email', this.verifyEmail.bind(this))
+      .post('/verify/authkey', this.verifyAuthkey.bind(this))
       .post('/join', this.join.bind(this))
       .post('/login', this.login.bind(this))
       .post('/logout', this.logout.bind(this))
   }
 
-  async emailAuthSend(req, res) {
+  async verifyEmail(req, res) {
     const { email, campusName } = req.body
     if (!email || !campusName) {
       return res.json({
@@ -46,7 +46,7 @@ class UserController {
       })
     }
 
-    const success = await this.userService.emailAuthSend(email)
+    const success = await this.userService.verifyEmail(email)
     const message = success ? 'Email auth key has issued.' : 'Email auth key issue failed.'
 
     return res.json({
@@ -55,7 +55,7 @@ class UserController {
     })
   }
 
-  async emailAuthReceive(req, res) {
+  async verifyAuthkey(req, res) {
     const { email, authKey } = req.body
     if (!email || !authKey) {
       return res.json({
@@ -63,7 +63,7 @@ class UserController {
         message: 'WRONG BODY INFO.',
       })
     }
-    const success = await this.userService.emailAuthReceive(email, authKey)
+    const success = await this.userService.verifyAuthkey(email, authKey)
     const message = success ? 'Email auth success.' : 'Email auth failed.'
 
     return res.json({
@@ -119,9 +119,7 @@ class UserController {
   }
 
   async logout(req, res) {
-    res.clearCookie('accessToken')
-    res.clearCookie('refreshToken')
-    res.json({
+    return res.clearCookie('accessToken').clearCookie('refreshToken').json({
       success: true,
       message: 'Logout success.',
     })

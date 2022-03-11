@@ -1,25 +1,16 @@
 const nodemailer = require('nodemailer')
 const { hash, compare } = require('bcrypt')
 const { sign } = require('../../lib/jwt')
+const { mailConfig } = require('../../config')
 
 class UserService {
   constructor(userRepository) {
     this.userRepository = userRepository
   }
 
-  async emailAuthSend(email) {
+  async verifyEmail(email) {
     if (await this.userRepository.findByEmail(email)) {
       return false
-    }
-
-    const mailConfig = {
-      service: 'Naver',
-      host: 'smtp.naver.com',
-      port: 587,
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PW,
-      },
     }
 
     const authKey = Math.random().toString(36).slice(2)
@@ -36,10 +27,11 @@ class UserService {
 
     const transporter = nodemailer.createTransport(mailConfig)
     transporter.sendMail(message)
+
     return true
   }
 
-  async emailAuthReceive(email, authKey) {
+  async verifyAuthkey(email, authKey) {
     return this.userRepository.verifyEmailToken(email, authKey)
   }
 

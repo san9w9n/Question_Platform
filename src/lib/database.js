@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 
 const { Pool } = require('pg')
-const { config } = require('../config')
+const { dbConfig } = require('../config')
 
 let pool
 
 const initializeDatabase = async () => {
-  pool = new Pool(config)
+  pool = new Pool(dbConfig)
 }
 
 const queryAtOnce = async (query, params) => {
