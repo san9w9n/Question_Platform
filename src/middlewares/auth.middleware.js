@@ -26,38 +26,34 @@ const issueAccessToken = async (req, res) => {
   const access = req.cookies.accessToken
   const refresh = req.cookies.refreshToken
   if (!access || !refresh) {
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       message: 'Append both accesstoken and refreshtoken.',
     })
-    return
-  }
-
-  const { verified: accessVerified } = verify(access, false)
-  if (accessVerified) {
-    res.status(400).json({
-      success: false,
-      message: 'Do not need to issue access token again.',
-    })
-    return
   }
 
   const { verified: refreshVerified, body } = verify(refresh, true)
   if (!refreshVerified) {
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       message: 'Refresh token expired, login again.',
     })
-    return
+  }
+
+  const { verified: accessVerified } = verify(access, false)
+  if (accessVerified) {
+    return res.status(400).json({
+      success: false,
+      message: 'Do not need to issue access token again.',
+    })
   }
 
   const rows = queryAtOnce('SELECT * FROM tokens WHERE user_id=$1', [body.id])
   if (!rows.length || rows[0].refresh_token !== refresh) {
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       message: 'Refresh token is changed, login again.',
     })
-    return
   }
 
   const newAccessToken = sign(
@@ -71,6 +67,10 @@ const issueAccessToken = async (req, res) => {
 
   res.cookie('accessToken', newAccessToken, {
     httpOnly: true,
+  })
+  return res.status(200).json({
+    success: true,
+    message: 'Access token is reissued.',
   })
 }
 
