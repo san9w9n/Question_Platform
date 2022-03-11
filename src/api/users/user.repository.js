@@ -115,6 +115,18 @@ class UserRepository {
     await end(client)
     return true
   }
+
+  async expireAuthKey(email) {
+    const query = `DELETE FROM emailtokens WHERE email=$1`
+    const params = [email]
+    try {
+      await queryAtOnce(query, params)
+    } catch (err) {
+      console.log(err.stack)
+      return false
+    }
+    return true
+  }
 }
 
 module.exports = UserRepository

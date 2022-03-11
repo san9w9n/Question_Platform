@@ -4,6 +4,7 @@ const { Router } = require('express')
 const campusNameData = require('../../../campusNameToEmail.json')
 const UserRepository = require('./user.repository')
 const UserService = require('./user.service')
+const { issueAccessToken } = require('../../middlewares/auth.middleware')
 
 class UserController {
   constructor() {
@@ -15,8 +16,10 @@ class UserController {
 
   initializeRoutes() {
     this.router
+      .get('/accesstoken', issueAccessToken)
       .post('/verify/email', this.verifyEmail.bind(this))
       .post('/verify/authkey', this.verifyAuthkey.bind(this))
+      .post('/verify/expire', this.verifyExpire.bind(this))
       .post('/join', this.join.bind(this))
       .post('/login', this.login.bind(this))
       .post('/logout', this.logout.bind(this))
@@ -66,6 +69,23 @@ class UserController {
     const success = await this.userService.verifyAuthkey(email, authKey)
     const message = success ? 'Email auth success.' : 'Email auth failed.'
 
+    return res.json({
+      success,
+      message,
+    })
+  }
+
+  async verifyExpire(req, res) {
+    const { email } = req.body
+    if (!email) {
+      return res.json({
+        success: false,
+        message: 'WRONG BODY INFO.',
+      })
+    }
+
+    const success = await this.userService.verifyExpire(email)
+    const message = success ? 'success' : 'fail'
     return res.json({
       success,
       message,

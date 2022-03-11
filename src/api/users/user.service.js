@@ -77,6 +77,10 @@ class UserService {
       refreshToken,
     }
   }
+
+  async verifyExpire(email) {
+    return this.userRepository.expireAuthKey(email)
+  }
 }
 
 module.exports = UserService
