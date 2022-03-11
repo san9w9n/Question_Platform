@@ -17,9 +17,7 @@ class UserRepository {
     return rows.length ? rows[0] : undefined
   }
 
-  async create(userInfo) {
-    const query = `INSERT INTO students(name, email, password, hakbeon) VALUES ($1, $2, $3, $4)`
-    const params = [userInfo.name, userInfo.email, userInfo.password, userInfo.hakbeon]
+  async queryAtOnceHandler(query, params) {
     try {
       await queryAtOnce(query, params)
     } catch (err) {
@@ -27,6 +25,13 @@ class UserRepository {
       return false
     }
     return true
+  }
+
+  async create(userInfo) {
+    const query = `INSERT INTO students(name, email, password, hakbeon) VALUES ($1, $2, $3, $4)`
+    const params = [userInfo.name, userInfo.email, userInfo.password, userInfo.hakbeon]
+
+    return this.queryAtOnceHandler(query, params)
   }
 
   async saveRefreshToken(refreshToken, userId) {
@@ -59,13 +64,7 @@ class UserRepository {
     const query = `INSERT INTO emailtokens(email, authkey, verified) VALUES ($1, $2, $3)`
     const params = [email, authKey, 'false']
 
-    try {
-      await queryAtOnce(query, params)
-    } catch (err) {
-      console.log(err.stack)
-      return false
-    }
-    return true
+    return this.queryAtOnceHandler(query, params)
   }
 
   async verifyEmailToken(email, authKey) {
@@ -119,13 +118,8 @@ class UserRepository {
   async expireAuthKey(email) {
     const query = `DELETE FROM emailtokens WHERE email=$1`
     const params = [email]
-    try {
-      await queryAtOnce(query, params)
-    } catch (err) {
-      console.log(err.stack)
-      return false
-    }
-    return true
+
+    return this.queryAtOnceHandler(query, params)
   }
 }
 
