@@ -11,7 +11,7 @@ class UserRepository {
     try {
       rows = await queryAtOnce(query, params)
     } catch (err) {
-      console.log(err)
+      console.log(err.stack)
       return undefined
     }
     return rows.length ? rows[0] : undefined
@@ -71,7 +71,7 @@ class UserRepository {
     const findQuery = `SELECT * FROM emailtokens WHERE email like $1 and authkey=$2`
     const findParams = [email, authKey]
 
-    const upQuery = `UPDATE emailtokens SET verified='true' WHERE email=$1`
+    const upQuery = `UPDATE emailtokens SET verified='true' WHERE email like $1`
     const upParams = [email]
 
     const client = await begin()
@@ -81,6 +81,10 @@ class UserRepository {
 
     const findResult = await queryMore(findQuery, findParams, client)
     if (!findResult) {
+      return false
+    }
+    if (!findResult.length) {
+      await end(client)
       return false
     }
 
@@ -109,8 +113,15 @@ class UserRepository {
     if (!findResult) {
       return false
     }
+    if (!findResult.length) {
+      await end(client)
+      return false
+    }
 
-    await queryMore(delQuery, delParams, client)
+    const deleteResult = await queryMore(delQuery, delParams, client)
+    if (!deleteResult) {
+      return false
+    }
     await end(client)
     return true
   }
