@@ -1,4 +1,4 @@
-const { BadRequestException, UnauthorizedException } = require('../common/exceptions')
+const { BadRequestException, UnauthorizedException, HttpException } = require('../common/exceptions')
 const { queryAtOnce } = require('../lib/database')
 const { sign, verify } = require('../lib/jwt')
 
@@ -32,7 +32,12 @@ const issueAccessToken = async (req, res) => {
     throw new BadRequestException('Access token issue failed.')
   }
 
-  const rows = queryAtOnce('SELECT * FROM tokens WHERE user_id=$1', [body.id])
+  let rows = []
+  try {
+    rows = await queryAtOnce('SELECT * FROM tokens WHERE user_id=$1', [body.id])
+  } catch (err) {
+    throw new HttpException(500, 'Database error.')
+  }
   if (!rows.length || rows[0].refresh_token !== refresh) {
     throw new BadRequestException('Login again.')
   }
