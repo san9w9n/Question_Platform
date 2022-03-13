@@ -1,7 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
-const errorMiddleware = require('./middlewares/error-middlewares')
+const errorMiddleware = require('./middlewares/error.middlewares')
 require('dotenv').config()
 
 class App {

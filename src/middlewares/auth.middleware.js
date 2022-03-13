@@ -2,14 +2,28 @@ const { BadRequestException, UnauthorizedException, HttpException } = require('.
 const { queryAtOnce } = require('../lib/database')
 const { sign, verify } = require('../lib/jwt')
 
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
+  const query = `SELECT * FROM students WHERE email like $1`
+
   const access = req.cookies.accessToken
   if (!access) {
     throw new UnauthorizedException('login first.')
   }
+
   const { verified, body } = verify(access, false)
   if (!verified) {
     throw new UnauthorizedException(body.name)
+  }
+
+  let rows = []
+  try {
+    rows = await queryAtOnce(query, [body.email])
+  } catch (err) {
+    throw new HttpException(500, 'Internal server error.')
+  }
+
+  if (!rows.length) {
+    throw new UnauthorizedException('Not a user.')
   }
   req.user_id = body.id
   next()
@@ -34,7 +48,7 @@ const issueAccessToken = async (req, res) => {
 
   let rows = []
   try {
-    rows = await queryAtOnce('SELECT * FROM tokens WHERE user_id=$1', [body.id])
+    rows = await queryAtOnce(`SELECT * FROM tokens WHERE user_id=$1`, [body.id])
   } catch (err) {
     throw new HttpException(500, 'Database error.')
   }
