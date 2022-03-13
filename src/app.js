@@ -2,7 +2,6 @@ const express = require('express')
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
 const errorMiddleware = require('./middlewares/error-middlewares')
-const notFoundMiddleware = require('./middlewares/notFound-middlewares')
 require('dotenv').config()
 
 class App {
@@ -12,7 +11,6 @@ class App {
     this.initializeMiddlewares()
     this.initializeControllers(controllers)
     this.initializeErrorHandling()
-    this.initializeNotFoundHandling()
   }
 
   listen() {
@@ -36,10 +34,6 @@ class App {
 
   initializeErrorHandling() {
     this.app.use(errorMiddleware)
-  }
-
-  initializeNotFoundHandling() {
-    this.app.use(notFoundMiddleware)
   }
 
   initializeControllers(controllers) {

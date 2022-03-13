@@ -1,22 +1,15 @@
+const { BadRequestException, UnauthorizedException, HttpException } = require('../common/exceptions')
 const { queryAtOnce } = require('../lib/database')
 const { sign, verify } = require('../lib/jwt')
 
 const verifyToken = (req, res, next) => {
   const access = req.cookies.accessToken
   if (!access) {
-    res.status(401).json({
-      success: false,
-      message: 'Login please.',
-    })
-    return
+    throw new UnauthorizedException('login first.')
   }
   const { verified, body } = verify(access, false)
   if (!verified) {
-    res.status(401).json({
-      success: false,
-      message: body.name,
-    })
-    return
+    throw new UnauthorizedException(body.name)
   }
   req.user_id = body.id
   next()
@@ -26,38 +19,27 @@ const issueAccessToken = async (req, res) => {
   const access = req.cookies.accessToken
   const refresh = req.cookies.refreshToken
   if (!access || !refresh) {
-    res.status(400).json({
-      success: false,
-      message: 'Append both accesstoken and refreshtoken.',
-    })
-    return
-  }
-
-  const { verified: accessVerified } = verify(access, false)
-  if (accessVerified) {
-    res.status(400).json({
-      success: false,
-      message: 'Do not need to issue access token again.',
-    })
-    return
+    throw new BadRequestException('Wrong body info.')
   }
 
   const { verified: refreshVerified, body } = verify(refresh, true)
   if (!refreshVerified) {
-    res.status(400).json({
-      success: false,
-      message: 'Refresh token expired, login again.',
-    })
-    return
+    throw new BadRequestException('Login again.')
   }
 
-  const rows = queryAtOnce('SELECT * FROM tokens WHERE user_id=$1', [body.id])
+  const { verified: accessVerified } = verify(access, false)
+  if (accessVerified) {
+    throw new BadRequestException('Access token issue failed.')
+  }
+
+  let rows = []
+  try {
+    rows = await queryAtOnce('SELECT * FROM tokens WHERE user_id=$1', [body.id])
+  } catch (err) {
+    throw new HttpException(500, 'Database error.')
+  }
   if (!rows.length || rows[0].refresh_token !== refresh) {
-    res.status(400).json({
-      success: false,
-      message: 'Refresh token is changed, login again.',
-    })
-    return
+    throw new BadRequestException('Login again.')
   }
 
   const newAccessToken = sign(
@@ -72,6 +54,11 @@ const issueAccessToken = async (req, res) => {
   res.cookie('accessToken', newAccessToken, {
     httpOnly: true,
   })
+
+  return {
+    success: true,
+    message: 'Access token is reissued.',
+  }
 }
 
 module.exports = {

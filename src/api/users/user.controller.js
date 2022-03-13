@@ -1,9 +1,13 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable class-methods-use-this */
 
 const { Router } = require('express')
 const campusNameData = require('../../../campusNameToEmail.json')
 const UserRepository = require('./user.repository')
 const UserService = require('./user.service')
+const { issueAccessToken } = require('../../middlewares/auth.middleware')
+const { BadRequestException, UnauthorizedException } = require('../../common/exceptions/index')
+const { wrap } = require('../../lib/request-handler')
 
 class UserController {
   constructor() {
@@ -15,116 +19,117 @@ class UserController {
 
   initializeRoutes() {
     this.router
-      .post('/join/auth/receive', this.emailAuthReceive.bind(this))
-      .post('/join/auth/send', this.emailAuthSend.bind(this))
-      .post('/join', this.join.bind(this))
-      .post('/login', this.login.bind(this))
-      .post('/logout', this.logout.bind(this))
+      .get('/accesstoken', wrap(issueAccessToken))
+      .post('/verify/email', wrap(this.verifyEmail.bind(this)))
+      .post('/verify/authkey', wrap(this.verifyAuthkey.bind(this)))
+      .post('/verify/expire', wrap(this.verifyExpire.bind(this)))
+      .post('/join', wrap(this.join.bind(this)))
+      .post('/login', wrap(this.login.bind(this)))
+      .post('/logout', wrap(this.logout.bind(this)))
   }
 
-  async emailAuthSend(req, res) {
+  async verifyEmail(req, _res) {
     const { email, campusName } = req.body
     if (!email || !campusName) {
-      return res.json({
-        success: false,
-        message: 'WRONG BODY INFO.',
-      })
+      throw new BadRequestException('Wrong Body Info.')
     }
 
     const campusEmail = campusNameData[campusName]
     if (!campusEmail) {
-      return res.json({
-        success: false,
-        message: 'NO CAMPUS INFO.',
-      })
+      throw new BadRequestException('Unknown campus name.')
+    } else if (email.indexOf(campusEmail) === -1) {
+      throw new BadRequestException('Not a campus email.')
     }
 
-    if (email.indexOf(campusEmail) === -1) {
-      return res.json({
-        success: false,
-        message: 'NOT A CAMPUS EMAIL.',
-      })
+    if (!(await this.userService.verifyEmail(email))) {
+      throw new BadRequestException('Email auth key is not issued.')
     }
 
-    const success = await this.userService.emailAuthSend(email)
-    const message = success ? 'Email auth key has issued.' : 'Email auth key issue failed.'
-
-    return res.json({
-      success,
-      message,
-    })
+    return {
+      success: true,
+      message: 'Email auth key is issued.',
+    }
   }
 
-  async emailAuthReceive(req, res) {
+  async verifyAuthkey(req, _res) {
     const { email, authKey } = req.body
     if (!email || !authKey) {
-      return res.json({
-        success: false,
-        message: 'WRONG BODY INFO.',
-      })
+      throw new BadRequestException('Wrong Body Info.')
     }
-    const success = await this.userService.emailAuthReceive(email, authKey)
-    const message = success ? 'Email auth success.' : 'Email auth failed.'
 
-    return res.json({
-      success,
-      message,
-    })
+    if (!(await this.userService.verifyAuthkey(email, authKey))) {
+      throw new BadRequestException('Email auth failed.')
+    }
+
+    return {
+      success: true,
+      message: 'Email auth success.',
+    }
   }
 
-  async join(req, res) {
+  async verifyExpire(req, _res) {
+    const { email } = req.body
+    if (!email) {
+      throw new BadRequestException('Wrong Body Info.')
+    }
+
+    if (!(await this.userService.verifyExpire(email))) {
+      throw new BadRequestException('Bad.')
+    }
+
+    return {
+      success: true,
+      message: 'Good.',
+    }
+  }
+
+  async join(req, _res) {
     const { email, name, password, hakbeon } = req.body
 
     if (!email || !name || !password || !hakbeon) {
-      return res.json({
-        success: false,
-        message: 'body information is wrong.',
-      })
+      throw new BadRequestException('Wrong Body Info.')
     }
 
-    const success = await this.userService.join(email, name, password, hakbeon)
-    const message = success ? 'Join success.' : 'Join failed.'
+    if (!(await this.userService.join(email, name, password, hakbeon))) {
+      throw new BadRequestException('Join failed.')
+    }
 
-    return res.json({
-      success,
-      message,
-    })
+    return {
+      success: true,
+      message: 'Join success.',
+    }
   }
 
   async login(req, res) {
     const { email, password } = req.body
     if (!email || !password) {
-      return res.json({
-        success: false,
-        message: 'Body information is wrong.',
-      })
+      throw new BadRequestException('Wrong Body Info.')
     }
 
     const tokens = await this.userService.login(email, password)
-    const success = !!tokens
-    const message = success ? 'Login success.' : 'Login failed.'
-
-    if (success) {
-      res.cookie('accessToken', tokens.accessToken, {
-        httpOnly: true,
-      })
-      res.cookie('refreshToken', tokens.refreshToken, {
-        httpOnly: true,
-      })
+    if (!tokens) {
+      throw new UnauthorizedException('Login failed.')
     }
-    return res.json({
-      success,
-      message,
-    })
+
+    res
+      .cookie('accessToken', tokens.accessToken, {
+        httpOnly: true,
+      })
+      .cookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+      })
+    return {
+      success: true,
+      message: 'Login success.',
+    }
   }
 
   async logout(req, res) {
-    res.clearCookie('accessToken')
-    res.clearCookie('refreshToken')
-    res.json({
+    res.clearCookie('accessToken').clearCookie('refreshToken')
+    return {
       success: true,
       message: 'Logout success.',
-    })
+    }
   }
 }
 
