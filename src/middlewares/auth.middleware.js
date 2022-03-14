@@ -2,7 +2,7 @@ const { BadRequestException, UnauthorizedException, HttpException } = require('.
 const { queryAtOnce } = require('../lib/database')
 const { sign, verify } = require('../lib/jwt')
 
-const verifyToken = async (req, res, next) => {
+const verifyToken = async (req, _res, next) => {
   const query = `SELECT * FROM students WHERE email like $1`
 
   const access = req.cookies.accessToken
@@ -15,16 +15,13 @@ const verifyToken = async (req, res, next) => {
     throw new UnauthorizedException(body.name)
   }
 
-  let rows = []
-  try {
-    rows = await queryAtOnce(query, [body.email])
-  } catch (err) {
-    throw new HttpException(500, 'Internal server error.')
-  }
-
-  if (!rows.length) {
+  const rows = await queryAtOnce(query, [body.email])
+  if (!rows) {
+    throw new HttpException(500, 'Internal server error. (find user by email.)')
+  } else if (rows.length === 0) {
     throw new UnauthorizedException('Not a user.')
   }
+
   req.user_id = body.id
   next()
 }
@@ -46,13 +43,10 @@ const issueAccessToken = async (req, res) => {
     throw new BadRequestException('Access token issue failed.')
   }
 
-  let rows = []
-  try {
-    rows = await queryAtOnce(`SELECT * FROM tokens WHERE user_id=$1`, [body.id])
-  } catch (err) {
-    throw new HttpException(500, 'Database error.')
-  }
-  if (!rows.length || rows[0].refresh_token !== refresh) {
+  const rows = await queryAtOnce(`SELECT * FROM tokens WHERE user_id=$1`, [body.id])
+  if (!rows) {
+    throw new HttpException(500, 'Internal server error. (find user by id)')
+  } else if (rows.length === 0 || rows[0].refresh_token !== refresh) {
     throw new BadRequestException('Login again.')
   }
 

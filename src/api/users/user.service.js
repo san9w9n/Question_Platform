@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer')
 const { hash, compare } = require('bcrypt')
 const { sign } = require('../../lib/jwt')
 const { mailConfig } = require('../../config')
+const { BadRequestException, HttpException } = require('../../common/exceptions')
 
 class UserService {
   constructor(userRepository) {
@@ -9,8 +10,9 @@ class UserService {
   }
 
   async verifyEmail(email) {
-    if (await this.userRepository.findByEmail(email)) {
-      return false
+    const user = await this.userRepository.findByEmail(email)
+    if (!user) {
+      throw new BadRequestException('No user info.')
     }
 
     const authKey = Math.random().toString(36).slice(2)
@@ -21,37 +23,43 @@ class UserService {
       html: `${authKey} 를 입력하세요.`,
     }
 
-    if (!(await this.userRepository.createEmailToken(email, authKey))) {
-      return false
+    const createEmailTokenResult = await this.userRepository.createEmailToken(email, authKey)
+    if (!createEmailTokenResult) {
+      throw new HttpException(500, 'Internal server error. (save email token)')
     }
 
     const transporter = nodemailer.createTransport(mailConfig)
     transporter.sendMail(message)
-
-    return true
   }
 
   async verifyAuthkey(email, authKey) {
-    return this.userRepository.verifyEmailToken(email, authKey)
+    const verifyEmailTokenResult = await this.userRepository.verifyEmailToken(email, authKey)
+    if (!verifyEmailTokenResult) {
+      throw new BadRequestException('Cannot verify email token')
+    }
   }
 
   async join(email, name, inputPassword, hakbeon) {
-    if (!(await this.userRepository.isEmailVerified(email))) {
-      return false
+    const checkEmailIsVerified = await this.userRepository.isEmailVerified(email)
+    if (!checkEmailIsVerified) {
+      throw new BadRequestException('Email is not verified.')
     }
     const password = await hash(inputPassword, 10)
-    return this.userRepository.create({ email, name, password, hakbeon })
+    const userCreateResult = this.userRepository.create({ email, name, password, hakbeon })
+    if (!userCreateResult) {
+      throw new HttpException(500, 'Internal server error. (create user)')
+    }
   }
 
   async login(email, inputPassword) {
     const student = await this.userRepository.findByEmail(email)
     if (!student) {
-      return undefined
+      throw new BadRequestException('No user info.')
     }
 
     const result = await compare(inputPassword, student.password)
     if (!result) {
-      return undefined
+      throw new BadRequestException('Wrong password.')
     }
 
     const refreshToken = sign(
@@ -70,7 +78,10 @@ class UserService {
       undefined,
       false
     )
-    await this.userRepository.saveRefreshToken(refreshToken, student.user_id)
+    const saveRefreshTokenResult = await this.userRepository.saveRefreshToken(refreshToken, student.user_id)
+    if (!saveRefreshTokenResult) {
+      throw new HttpException(500, 'Internal server error. (save refresh token)')
+    }
 
     return {
       accessToken,
@@ -79,7 +90,10 @@ class UserService {
   }
 
   async verifyExpire(email) {
-    return this.userRepository.expireAuthKey(email)
+    const deleteEmailToken = await this.userRepository.expireAuthKey(email)
+    if (!deleteEmailToken) {
+      throw new HttpException(500, 'Internal server error. (delete email token)')
+    }
   }
 }
 

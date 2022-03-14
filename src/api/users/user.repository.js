@@ -7,31 +7,16 @@ class UserRepository {
   async findByEmail(email) {
     const query = `SELECT * FROM students WHERE email like $1`
     const params = [email]
-    let rows = []
-    try {
-      rows = await queryAtOnce(query, params)
-    } catch (err) {
-      console.log(err.stack)
-      return undefined
-    }
-    return rows.length ? rows[0] : undefined
-  }
 
-  async queryAtOnceHandler(query, params) {
-    try {
-      await queryAtOnce(query, params)
-    } catch (err) {
-      console.log(err.stack)
-      return false
-    }
-    return true
+    const rows = queryAtOnce(query, params)
+    return rows ? rows[0] : undefined
   }
 
   async create(userInfo) {
     const query = `INSERT INTO students(name, email, password, hakbeon) VALUES ($1, $2, $3, $4)`
     const params = [userInfo.name, userInfo.email, userInfo.password, userInfo.hakbeon]
 
-    return this.queryAtOnceHandler(query, params)
+    return queryAtOnce(query, params)
   }
 
   async saveRefreshToken(refreshToken, userId) {
@@ -45,17 +30,14 @@ class UserRepository {
     if (!client) {
       return false
     }
-
     const deleteResult = await queryMore(delQuery, delParams, client)
     if (!deleteResult) {
       return false
     }
-
     const insertResult = await queryMore(inQuery, inParams, client)
     if (!insertResult) {
       return false
     }
-
     await end(client)
     return true
   }
@@ -64,7 +46,7 @@ class UserRepository {
     const query = `INSERT INTO emailtokens(email, authkey, verified) VALUES ($1, $2, $3)`
     const params = [email, authKey, 'false']
 
-    return this.queryAtOnceHandler(query, params)
+    return this.queryAtOnce(query, params)
   }
 
   async verifyEmailToken(email, authKey) {
@@ -78,7 +60,6 @@ class UserRepository {
     if (!client) {
       return false
     }
-
     const findResult = await queryMore(findQuery, findParams, client)
     if (!findResult) {
       return false
@@ -87,7 +68,6 @@ class UserRepository {
       await end(client)
       return false
     }
-
     const updateResult = await queryMore(upQuery, upParams, client)
     if (!updateResult) {
       return false
@@ -108,7 +88,6 @@ class UserRepository {
     if (!client) {
       return false
     }
-
     const findResult = await queryMore(findQuery, findParams, client)
     if (!findResult) {
       return false
@@ -117,7 +96,6 @@ class UserRepository {
       await end(client)
       return false
     }
-
     const deleteResult = await queryMore(delQuery, delParams, client)
     if (!deleteResult) {
       return false
@@ -130,7 +108,7 @@ class UserRepository {
     const query = `DELETE FROM emailtokens WHERE email=$1`
     const params = [email]
 
-    return this.queryAtOnceHandler(query, params)
+    return this.queryAtOnce(query, params)
   }
 }
 

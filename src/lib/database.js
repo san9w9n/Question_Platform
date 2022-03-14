@@ -7,10 +7,17 @@ let pool
 
 const initializeDatabase = async () => {
   pool = new Pool(dbConfig)
+  await pool.query(`SELECT NOW()`)
 }
 
 const queryAtOnce = async (query, params) => {
-  const { rows } = await pool.query(query, params)
+  let rows = []
+  try {
+    const result = await pool.query(query, params)
+    rows = result.rows
+  } catch (err) {
+    return undefined
+  }
   return rows
 }
 
@@ -19,7 +26,6 @@ const begin = async () => {
   try {
     await client.query('BEGIN')
   } catch (err) {
-    console.error(err.stack)
     await client.query('ROLLBACK')
     client.release()
     return undefined
@@ -28,16 +34,16 @@ const begin = async () => {
 }
 
 const queryMore = async (query, params, client) => {
-  let result
+  let rows = []
   try {
-    result = await client.query(query, params)
+    const result = await client.query(query, params)
+    rows = result.rows
   } catch (err) {
-    console.error(err.stack)
     await client.query('ROLLBACK')
     client.release()
     return undefined
   }
-  return result.rows
+  return rows
 }
 
 const end = async (client) => {
