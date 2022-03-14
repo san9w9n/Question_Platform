@@ -42,14 +42,14 @@ class UserRepository {
     return true
   }
 
-  async createEmailToken(email, authKey) {
+  async createEmailCode(email, authKey) {
     const query = `INSERT INTO emailtokens(email, authkey, verified) VALUES ($1, $2, $3)`
     const params = [email, authKey, 'false']
 
     return this.queryAtOnce(query, params)
   }
 
-  async verifyEmailToken(email, authKey) {
+  async verifyEmailCode(email, authKey) {
     const findQuery = `SELECT * FROM emailtokens WHERE email like $1 and authkey=$2`
     const findParams = [email, authKey]
 
@@ -104,11 +104,15 @@ class UserRepository {
     return true
   }
 
-  async expireAuthKey(email) {
+  async deleteEmailCode(email) {
     const query = `DELETE FROM emailtokens WHERE email=$1`
     const params = [email]
 
-    return this.queryAtOnce(query, params)
+    const deleteResult = await queryAtOnce(query, params)
+    if (!deleteResult) {
+      return false
+    }
+    return true
   }
 }
 

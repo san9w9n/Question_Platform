@@ -20,15 +20,15 @@ class UserController {
   initializeRoutes() {
     this.router
       .get('/accesstoken', wrap(issueAccessToken))
-      .get('/verify/authkey', wrap(this.verifyEmail.bind(this)))
-      .post('/verify/authkey', wrap(this.verifyAuthkey.bind(this)))
-      .delete('/verify/authkey/:email', wrap(this.verifyExpire.bind(this)))
+      .get('/emailcode', wrap(this.getEmailCode.bind(this)))
+      .post('/emailcode', wrap(this.verifyEmailCode.bind(this)))
+      .delete('/emailcode/:email', wrap(this.deleteEmailCode.bind(this)))
       .post('/join', wrap(this.join.bind(this)))
       .post('/login', wrap(this.login.bind(this)))
       .post('/logout', wrap(this.logout.bind(this)))
   }
 
-  async verifyEmail(req, _res) {
+  async getEmailCode(req, _res) {
     const { email, campusName } = req.query
     if (!email || !campusName) {
       throw new BadRequestException('Wrong Body Info.')
@@ -41,36 +41,36 @@ class UserController {
       throw new BadRequestException('Not a campus email.')
     }
 
-    await this.userService.verifyEmail(email)
+    await this.userService.getEmailCode(email)
     return {
       success: true,
       message: 'Email auth key is issued.',
     }
   }
 
-  async verifyAuthkey(req, _res) {
+  async verifyEmailCode(req, _res) {
     const { email, authKey } = req.body
     if (!email || !authKey) {
       throw new BadRequestException('Wrong Body Info.')
     }
 
-    await this.userService.verifyAuthkey(email, authKey)
+    await this.userService.verifyEmailCode(email, authKey)
     return {
       success: true,
       message: 'Email auth success.',
     }
   }
 
-  async verifyExpire(req, _res) {
-    const { email } = req.params.email
+  async deleteEmailCode(req, _res) {
+    const { email } = req.params
     if (!email) {
       throw new BadRequestException('Wrong Body Info.')
     }
 
-    await this.userService.verifyExpire(email)
+    await this.userService.deleteEmailCode(email)
     return {
       success: true,
-      message: 'Good.',
+      message: 'Delete expired authkey.',
     }
   }
 

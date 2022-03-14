@@ -9,7 +9,7 @@ class UserService {
     this.userRepository = userRepository
   }
 
-  async verifyEmail(email) {
+  async getEmailCode(email) {
     const user = await this.userRepository.findByEmail(email)
     if (!user) {
       throw new BadRequestException('No user info.')
@@ -23,7 +23,7 @@ class UserService {
       html: `${authKey} 를 입력하세요.`,
     }
 
-    const createEmailTokenResult = await this.userRepository.createEmailToken(email, authKey)
+    const createEmailTokenResult = await this.userRepository.createEmailCode(email, authKey)
     if (!createEmailTokenResult) {
       throw new HttpException(500, 'Internal server error. (save email token)')
     }
@@ -32,10 +32,17 @@ class UserService {
     transporter.sendMail(message)
   }
 
-  async verifyAuthkey(email, authKey) {
-    const verifyEmailTokenResult = await this.userRepository.verifyEmailToken(email, authKey)
-    if (!verifyEmailTokenResult) {
+  async verifyEmailCode(email, authKey) {
+    const verifyEmailCodeResult = await this.userRepository.verifyEmailCode(email, authKey)
+    if (!verifyEmailCodeResult) {
       throw new BadRequestException('Cannot verify email token')
+    }
+  }
+
+  async deleteEmailCode(email) {
+    const deleteEmailCodeResult = await this.userRepository.deleteEmailCode(email)
+    if (!deleteEmailCodeResult) {
+      throw new HttpException(500, 'Internal server error. (delete email token)')
     }
   }
 
@@ -86,13 +93,6 @@ class UserService {
     return {
       accessToken,
       refreshToken,
-    }
-  }
-
-  async verifyExpire(email) {
-    const deleteEmailToken = await this.userRepository.expireAuthKey(email)
-    if (!deleteEmailToken) {
-      throw new HttpException(500, 'Internal server error. (delete email token)')
     }
   }
 }
