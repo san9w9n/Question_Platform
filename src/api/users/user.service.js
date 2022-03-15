@@ -2,7 +2,7 @@ const nodemailer = require('nodemailer')
 const { hash, compare } = require('bcrypt')
 const { sign } = require('../../lib/jwt')
 const { mailConfig } = require('../../config')
-const { BadRequestException, HttpException } = require('../../common/exceptions')
+const { BadRequestException, HttpException, ForbidException } = require('../../common/exceptions')
 
 class UserService {
   constructor(userRepository) {
@@ -93,6 +93,42 @@ class UserService {
     return {
       accessToken,
       refreshToken,
+    }
+  }
+
+  async changePassword(email, curPassword, newPassword) {
+    const student = await this.userRepository.findByEmail(email)
+    if (!student) {
+      throw new ForbidException('Not a student. login again.')
+    }
+
+    const passwordCompareResult = await compare(curPassword, student.password)
+    if (!passwordCompareResult) {
+      throw new BadRequestException('Wrong current password.')
+    }
+
+    const password = await hash(newPassword, 10)
+    const passwordChangeResult = await this.userRepository.changePassword(email, password)
+    if (!passwordChangeResult) {
+      throw new HttpException(500, 'Internal server error. (change password)')
+    }
+  }
+
+  async deleteUser(email) {
+    const deleteResult = await this.userRepository.deleteUser(email)
+    if (!deleteResult) {
+      throw new HttpException(500, 'Internal server error. (delete user)')
+    }
+  }
+
+  async getUser(email) {
+    const student = await this.userRepository.findByEmail(email)
+    if (!student) {
+      throw new ForbidException('Not a student. login again.')
+    }
+    return {
+      name: student.name,
+      hakbeon: student.hakbeon,
     }
   }
 }

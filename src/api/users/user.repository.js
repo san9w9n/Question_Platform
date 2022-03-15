@@ -114,6 +114,28 @@ class UserRepository {
     }
     return true
   }
+
+  async changePassword(email, newPassword) {
+    const query = `UPDATE students SET password=$1 WHERE email like $2`
+    const params = [newPassword, email]
+
+    const updateResult = await queryAtOnce(query, params)
+    if (!updateResult) {
+      return false
+    }
+    return true
+  }
+
+  async deleteUser(email) {
+    const query = `DELETE FROM students WHERE email like $1`
+    const params = [email]
+
+    const deleteResult = await queryAtOnce(query, params)
+    if (!deleteResult) {
+      return false
+    }
+    return true
+  }
 }
 
 module.exports = UserRepository
