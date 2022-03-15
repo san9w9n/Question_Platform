@@ -2,13 +2,15 @@
 /* eslint-disable class-methods-use-this */
 
 const { Router } = require('express')
+
 const campusNameData = require('../../../campusNameToEmail.json')
 const UserRepository = require('./user.repository')
 const UserService = require('./user.service')
-const { issueAccessToken } = require('../../middlewares/auth.middleware')
-const { BadRequestException, UnauthorizedException, HttpException } = require('../../common/exceptions/index')
+
 const { wrap } = require('../../lib/request-handler')
 const { verifyToken } = require('../../middlewares/auth.middleware')
+const { issueAccessToken } = require('../../middlewares/auth.middleware')
+const { BadRequestException, UnauthorizedException } = require('../../common/exceptions/index')
 
 class UserController {
   constructor() {
@@ -154,7 +156,6 @@ class UserController {
     if (!email) {
       throw new UnauthorizedException('Login first.')
     }
-
     const { name, hakbeon } = await this.userService.getUser(email)
     return {
       success: true,

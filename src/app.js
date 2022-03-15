@@ -1,8 +1,8 @@
-const express = require('express')
+require('dotenv').config()
 const cors = require('cors')
+const express = require('express')
 const cookieParser = require('cookie-parser')
 const errorMiddleware = require('./middlewares/error.middlewares')
-require('dotenv').config()
 
 class App {
   constructor(controllers) {
@@ -13,6 +13,10 @@ class App {
     this.initializeErrorHandling()
   }
 
+  getServer() {
+    return this.app
+  }
+
   listen() {
     const PORT = process.env.PORT || 3000
     this.app.listen(PORT, () => {
@@ -21,25 +25,21 @@ class App {
     })
   }
 
-  getServer() {
-    return this.app
-  }
-
   initializeMiddlewares() {
-    this.app.use(cookieParser())
     this.app.use(cors())
+    this.app.use(cookieParser())
     this.app.use(express.json())
-    this.app.use(express.urlencoded({ extended: true }))
-  }
-
-  initializeErrorHandling() {
-    this.app.use(errorMiddleware)
+    this.app.use(express.urlencoded({ extended: false }))
   }
 
   initializeControllers(controllers) {
     controllers.forEach((controller) => {
       this.app.use(controller.path, controller.router)
     })
+  }
+
+  initializeErrorHandling() {
+    this.app.use(errorMiddleware)
   }
 }
 

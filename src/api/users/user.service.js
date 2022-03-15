@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer')
+
 const { hash, compare } = require('bcrypt')
 const { sign } = require('../../lib/jwt')
 const { mailConfig } = require('../../config')
