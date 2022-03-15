@@ -8,6 +8,7 @@ const UserService = require('./user.service')
 const { issueAccessToken } = require('../../middlewares/auth.middleware')
 const { BadRequestException, UnauthorizedException, HttpException } = require('../../common/exceptions/index')
 const { wrap } = require('../../lib/request-handler')
+const { verifyToken } = require('../../middlewares/auth.middleware')
 
 class UserController {
   constructor() {
@@ -26,6 +27,9 @@ class UserController {
       .post('/join', wrap(this.join.bind(this)))
       .post('/login', wrap(this.login.bind(this)))
       .post('/logout', wrap(this.logout.bind(this)))
+      .get('/', verifyToken, wrap(this.getUser(this)))
+      .patch('/', verifyToken, wrap(this.changePassword(this)))
+      .delete('/', verifyToken, wrap(this.deleteUser(this)))
   }
 
   async getEmailCode(req, _res) {
@@ -108,11 +112,55 @@ class UserController {
     }
   }
 
-  async logout(req, res) {
+  async logout(_req, res) {
     res.clearCookie('accessToken').clearCookie('refreshToken')
     return {
       success: true,
       message: 'Logout success.',
+    }
+  }
+
+  async changePassword(req, res) {
+    const { curPassword, newPassword } = req.body
+    const { email } = req
+    if (!curPassword || !newPassword) {
+      throw new BadRequestException('Wrong Body Info.')
+    } else if (!email) {
+      throw new UnauthorizedException('Login first.')
+    }
+
+    await this.userService.changePassword(email, curPassword, newPassword)
+    return {
+      success: true,
+      message: 'Password is changed.',
+    }
+  }
+
+  async deleteUser(req, res) {
+    const { email } = req
+    if (!email) {
+      throw new UnauthorizedException('Login first.')
+    }
+    await this.userService.deleteUser(email)
+    res.clearCookie('accessToken').clearCookie('refreshToken')
+    return {
+      success: true,
+      message: 'User is deleted.',
+    }
+  }
+
+  async getUser(req, res) {
+    const { email } = req
+    if (!email) {
+      throw new UnauthorizedException('Login first.')
+    }
+
+    const { name, hakbeon } = await this.userService.getUser(email)
+    return {
+      success: true,
+      email,
+      name,
+      hakbeon,
     }
   }
 }

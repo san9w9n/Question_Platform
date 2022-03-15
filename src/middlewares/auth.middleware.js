@@ -23,6 +23,7 @@ const verifyToken = async (req, _res, next) => {
   }
 
   req.user_id = body.id
+  req.email = body.email
   next()
 }
 
